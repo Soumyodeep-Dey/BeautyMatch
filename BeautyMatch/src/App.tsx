@@ -11,6 +11,7 @@ export default function App() {
       const profile = data.skinProfile
 
       if (!profile) {
+        window.open(chrome.runtime.getURL("onboarding.html"), "_blank")
         setVerdict("Not Recommended")
         return
       }
