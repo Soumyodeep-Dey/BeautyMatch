@@ -12,9 +12,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: 'index.html',
+        popup: 'index.html',
         onboarding: 'public/onboarding.html',
-        content: 'src/content/scraper.ts'
+        background: 'src/background/background.ts'
       }
     }
   }
