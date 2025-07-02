@@ -13,7 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: 'index.html',
-        onboarding: 'public/onboarding.html',
+        onboarding: 'onboarding.html',
         background: 'src/background/background.ts'
       }
     }
