@@ -45,11 +45,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "onboarding.html"
+        "onboarding.html",
+        "assets/*"
       ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "matches": ["<all_urls>"]
     }
   ]
 }
