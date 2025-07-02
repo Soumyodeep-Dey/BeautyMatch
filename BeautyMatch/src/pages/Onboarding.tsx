@@ -2,54 +2,283 @@
 import { useState } from "react"
 
 export default function Onboarding() {
+  const [step, setStep] = useState(1)
   const [skinTone, setSkinTone] = useState("")
   const [skinType, setSkinType] = useState("")
   const [allergies, setAllergies] = useState("")
+  const [concerns, setConcerns] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const saveProfile = () => {
+  const skinToneOptions = [
+    { value: "fair cool", label: "Fair Cool", description: "Light with pink/blue undertones" },
+    { value: "fair warm", label: "Fair Warm", description: "Light with yellow/golden undertones" },
+    { value: "fair neutral", label: "Fair Neutral", description: "Light with balanced undertones" },
+    { value: "light cool", label: "Light Cool", description: "Light-medium with pink undertones" },
+    { value: "light warm", label: "Light Warm", description: "Light-medium with golden undertones" },
+    { value: "light neutral", label: "Light Neutral", description: "Light-medium with balanced undertones" },
+    { value: "medium cool", label: "Medium Cool", description: "Medium with pink/red undertones" },
+    { value: "medium warm", label: "Medium Warm", description: "Medium with golden/yellow undertones" },
+    { value: "medium neutral", label: "Medium Neutral", description: "Medium with balanced undertones" },
+    { value: "tan cool", label: "Tan Cool", description: "Medium-deep with cool undertones" },
+    { value: "tan warm", label: "Tan Warm", description: "Medium-deep with warm undertones" },
+    { value: "deep cool", label: "Deep Cool", description: "Deep with cool undertones" },
+    { value: "deep warm", label: "Deep Warm", description: "Deep with warm undertones" },
+    { value: "deep neutral", label: "Deep Neutral", description: "Deep with balanced undertones" }
+  ]
+
+  const skinTypeOptions = [
+    { value: "oily", label: "Oily", description: "Shiny T-zone, large pores, prone to breakouts" },
+    { value: "dry", label: "Dry", description: "Tight feeling, flaky, small pores" },
+    { value: "combination", label: "Combination", description: "Oily T-zone, normal/dry cheeks" },
+    { value: "normal", label: "Normal", description: "Balanced, not too oily or dry" },
+    { value: "sensitive", label: "Sensitive", description: "Easily irritated, reactive to products" },
+    { value: "mature", label: "Mature", description: "Shows signs of aging, may be drier" }
+  ]
+
+  const concernOptions = [
+    "Acne/Breakouts", "Dark Spots", "Fine Lines", "Large Pores", "Dullness", 
+    "Redness", "Dark Circles", "Uneven Texture", "Hyperpigmentation", "Sensitivity"
+  ]
+
+  const toggleConcern = (concern: string) => {
+    setConcerns(prev => 
+      prev.includes(concern) 
+        ? prev.filter(c => c !== concern)
+        : [...prev, concern]
+    )
+  }
+
+  const saveProfile = async () => {
+    setIsLoading(true)
+    
     const profile = {
       skinTone: skinTone.trim(),
       skinType: skinType.trim().toLowerCase(),
-      allergies: allergies.split(",").map(a => a.trim().toLowerCase())
+      allergies: allergies.split(",").map(a => a.trim().toLowerCase()).filter(a => a.length > 0),
+      concerns: concerns
     }
 
-    chrome.storage.sync.set({ skinProfile: profile }, () => {
-      alert("Skin profile saved!")
-    })
+    try {
+      await new Promise<void>((resolve) => {
+        chrome.storage.sync.set({ skinProfile: profile }, () => {
+          resolve()
+        })
+      })
+
+      // Show success message
+      setStep(4)
+    } catch (error) {
+      alert("Failed to save profile. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const nextStep = () => {
+    if (step < 3) setStep(step + 1)
+  }
+
+  const prevStep = () => {
+    if (step > 1) setStep(step - 1)
+  }
+
+  const canProceed = () => {
+    switch (step) {
+      case 1: return skinTone !== ""
+      case 2: return skinType !== ""
+      case 3: return true // Allergies are optional
+      default: return false
+    }
+  }
+
+  if (step === 4) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+          <div className="text-6xl mb-4">✨</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Profile Created!</h1>
+          <p className="text-gray-600 mb-6">
+            Your BeautyMatch profile is ready. You can now get personalized product recommendations on beauty sites.
+          </p>
+          <button
+            onClick={() => window.close()}
+            className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors"
+          >
+            Start Shopping
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4 text-center">Set Up Your Skin Profile</h1>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="text-4xl mb-2">💄</div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">BeautyMatch Setup</h1>
+          <p className="text-gray-600">Let's create your personalized skin profile</p>
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <input
-          type="text"
-          placeholder="Skin Tone (e.g., Fair, Medium, Dark)"
-          value={skinTone}
-          onChange={(e) => setSkinTone(e.target.value)}
-          className="p-2 border rounded"
-        />
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-500">Step {step} of 3</span>
+            <span className="text-sm text-gray-500">{Math.round((step/3) * 100)}% complete</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-pink-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(step/3) * 100}%` }}
+            ></div>
+          </div>
+        </div>
 
-        <input
-          type="text"
-          placeholder="Skin Type (e.g., oily, dry, normal)"
-          value={skinType}
-          onChange={(e) => setSkinType(e.target.value)}
-          className="p-2 border rounded"
-        />
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          {/* Step 1: Skin Tone */}
+          {step === 1 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin tone?</h2>
+              <p className="text-gray-600 mb-6">Choose the option that best matches your skin tone and undertone</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {skinToneOptions.map(option => (
+                  <label key={option.value} className="relative">
+                    <input
+                      type="radio"
+                      name="skinTone"
+                      value={option.value}
+                      checked={skinTone === option.value}
+                      onChange={(e) => setSkinTone(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      skinTone === option.value 
+                        ? 'border-pink-500 bg-pink-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <div className="font-medium text-gray-800">{option.label}</div>
+                      <div className="text-sm text-gray-600">{option.description}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
-        <input
-          type="text"
-          placeholder="Allergies (comma-separated)"
-          value={allergies}
-          onChange={(e) => setAllergies(e.target.value)}
-          className="p-2 border rounded"
-        />
+          {/* Step 2: Skin Type */}
+          {step === 2 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin type?</h2>
+              <p className="text-gray-600 mb-6">Select the description that best fits your skin</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {skinTypeOptions.map(option => (
+                  <label key={option.value} className="relative">
+                    <input
+                      type="radio"
+                      name="skinType"
+                      value={option.value}
+                      checked={skinType === option.value}
+                      onChange={(e) => setSkinType(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      skinType === option.value 
+                        ? 'border-pink-500 bg-pink-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <div className="font-medium text-gray-800">{option.label}</div>
+                      <div className="text-sm text-gray-600">{option.description}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
-        <button onClick={saveProfile} className="mt-4 p-2 bg-blue-600 text-white rounded">
-          Save Profile
-        </button>
+          {/* Step 3: Allergies & Concerns */}
+          {step === 3 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">Final touches</h2>
+              
+              {/* Allergies */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Known allergies or ingredients to avoid (optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., fragrance, parabens, sulfates"
+                  value={allergies}
+                  onChange={(e) => setAllergies(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                />
+                <p className="text-sm text-gray-500 mt-1">Separate multiple items with commas</p>
+              </div>
+
+              {/* Skin Concerns */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  What are your main skin concerns? (optional)
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {concernOptions.map(concern => (
+                    <button
+                      key={concern}
+                      type="button"
+                      onClick={() => toggleConcern(concern)}
+                      className={`p-2 text-sm border rounded-lg transition-all ${
+                        concerns.includes(concern)
+                          ? 'border-pink-500 bg-pink-50 text-pink-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      {concern}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-8">
+            <button
+              onClick={prevStep}
+              disabled={step === 1}
+              className="px-6 py-2 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Back
+            </button>
+
+            {step === 3 ? (
+              <button
+                onClick={saveProfile}
+                disabled={isLoading}
+                className="px-8 py-3 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </div>
+                ) : (
+                  'Complete Setup'
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={nextStep}
+                disabled={!canProceed()}
+                className="px-8 py-3 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+              >
+                Next →
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

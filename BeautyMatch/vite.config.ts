@@ -1,3 +1,4 @@
+// vite.config.ts
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { crx } from '@crxjs/vite-plugin'
@@ -9,11 +10,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: 'index.html',
-        onboarding: 'public/onboarding.html'
+        onboarding: 'public/onboarding.html',
+        background: 'src/background/background.ts'
       }
     }
   }
 })
+
 
 // This configuration file sets up Vite for a Chrome extension project using React.
 // It imports necessary plugins and the manifest file, then exports a configuration object.
