@@ -44,7 +44,7 @@
     }
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "src/background/background.ts",
     "type": "module"
   },
   "web_accessible_resources": [
