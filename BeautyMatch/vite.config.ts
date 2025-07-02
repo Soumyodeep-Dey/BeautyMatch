@@ -5,18 +5,20 @@ import { crx } from '@crxjs/vite-plugin'
 import manifest from './public/manifest.json'
 
 export default defineConfig({
-  plugins: [react(), crx({ manifest })],
+  plugins: [
+    react(),
+    crx({ manifest })
+  ],
   build: {
     rollupOptions: {
       input: {
-        popup: 'index.html',
+        main: 'index.html',
         onboarding: 'public/onboarding.html',
-        background: 'src/background/background.ts'
+        content: 'src/content/scraper.ts'
       }
     }
   }
 })
-
 
 // This configuration file sets up Vite for a Chrome extension project using React.
 // It imports necessary plugins and the manifest file, then exports a configuration object.
@@ -44,4 +46,4 @@ export default defineConfig({
 // Regularly check for updates to the plugins and Vite itself to take advantage of new features and improvements.
 
 // This configuration is a starting point and can be extended with additional plugins or configurations as needed for your specific project requirements.
-// Happy coding!    
+// Happy coding!

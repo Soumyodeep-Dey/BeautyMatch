@@ -36,13 +36,13 @@ export default function Onboarding() {
   ]
 
   const concernOptions = [
-    "Acne/Breakouts", "Dark Spots", "Fine Lines", "Large Pores", "Dullness", 
+    "Acne/Breakouts", "Dark Spots", "Fine Lines", "Large Pores", "Dullness",
     "Redness", "Dark Circles", "Uneven Texture", "Hyperpigmentation", "Sensitivity"
   ]
 
   const toggleConcern = (concern: string) => {
-    setConcerns(prev => 
-      prev.includes(concern) 
+    setConcerns(prev =>
+      prev.includes(concern)
         ? prev.filter(c => c !== concern)
         : [...prev, concern]
     )
@@ -50,7 +50,7 @@ export default function Onboarding() {
 
   const saveProfile = async () => {
     setIsLoading(true)
-    
+
     const profile = {
       skinTone: skinTone.trim(),
       skinType: skinType.trim().toLowerCase(),
@@ -59,15 +59,26 @@ export default function Onboarding() {
     }
 
     try {
-      await new Promise<void>((resolve) => {
-        chrome.storage.sync.set({ skinProfile: profile }, () => {
-          resolve()
+      // Check if we're in a Chrome extension context
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await new Promise<void>((resolve, reject) => {
+          chrome.storage.sync.set({ skinProfile: profile }, () => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError)
+            } else {
+              resolve()
+            }
+          })
         })
-      })
+      } else {
+        // Fallback to localStorage for development/testing
+        localStorage.setItem('skinProfile', JSON.stringify(profile))
+      }
 
       // Show success message
       setStep(4)
     } catch (error) {
+      console.error('Failed to save profile:', error)
       alert("Failed to save profile. Please try again.")
     } finally {
       setIsLoading(false)
@@ -91,6 +102,20 @@ export default function Onboarding() {
     }
   }
 
+  const handleComplete = () => {
+    // Try to close the tab/window if we're in extension context
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.getCurrent((tab) => {
+        if (tab?.id) {
+          chrome.tabs.remove(tab.id)
+        }
+      })
+    } else {
+      // Fallback - redirect or close
+      window.close()
+    }
+  }
+
   if (step === 4) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
@@ -101,7 +126,7 @@ export default function Onboarding() {
             Your BeautyMatch profile is ready. You can now get personalized product recommendations on beauty sites.
           </p>
           <button
-            onClick={() => window.close()}
+            onClick={handleComplete}
             className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors"
           >
             Start Shopping
@@ -125,12 +150,12 @@ export default function Onboarding() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-gray-500">Step {step} of 3</span>
-            <span className="text-sm text-gray-500">{Math.round((step/3) * 100)}% complete</span>
+            <span className="text-sm text-gray-500">{Math.round((step / 3) * 100)}% complete</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-pink-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(step/3) * 100}%` }}
+              style={{ width: `${(step / 3) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -141,7 +166,7 @@ export default function Onboarding() {
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin tone?</h2>
               <p className="text-gray-600 mb-6">Choose the option that best matches your skin tone and undertone</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {skinToneOptions.map(option => (
                   <label key={option.value} className="relative">
@@ -153,11 +178,10 @@ export default function Onboarding() {
                       onChange={(e) => setSkinTone(e.target.value)}
                       className="sr-only"
                     />
-                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      skinTone === option.value 
-                        ? 'border-pink-500 bg-pink-50' 
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinTone === option.value
+                        ? 'border-pink-500 bg-pink-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}>
+                      }`}>
                       <div className="font-medium text-gray-800">{option.label}</div>
                       <div className="text-sm text-gray-600">{option.description}</div>
                     </div>
@@ -172,7 +196,7 @@ export default function Onboarding() {
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin type?</h2>
               <p className="text-gray-600 mb-6">Select the description that best fits your skin</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {skinTypeOptions.map(option => (
                   <label key={option.value} className="relative">
@@ -184,11 +208,10 @@ export default function Onboarding() {
                       onChange={(e) => setSkinType(e.target.value)}
                       className="sr-only"
                     />
-                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      skinType === option.value 
-                        ? 'border-pink-500 bg-pink-50' 
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinType === option.value
+                        ? 'border-pink-500 bg-pink-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}>
+                      }`}>
                       <div className="font-medium text-gray-800">{option.label}</div>
                       <div className="text-sm text-gray-600">{option.description}</div>
                     </div>
@@ -202,7 +225,7 @@ export default function Onboarding() {
           {step === 3 && (
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Final touches</h2>
-              
+
               {/* Allergies */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -229,11 +252,10 @@ export default function Onboarding() {
                       key={concern}
                       type="button"
                       onClick={() => toggleConcern(concern)}
-                      className={`p-2 text-sm border rounded-lg transition-all ${
-                        concerns.includes(concern)
+                      className={`p-2 text-sm border rounded-lg transition-all ${concerns.includes(concern)
                           ? 'border-pink-500 bg-pink-50 text-pink-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}
+                        }`}
                     >
                       {concern}
                     </button>
