@@ -95,10 +95,4 @@ npm run build
 
 ---
 
-## 📄 License
-
-MIT – free to use, modify, and build on.
-
----
-
 > Built with 💅 by Soumyodeep Dey and contributors.
