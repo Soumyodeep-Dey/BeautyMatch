@@ -36,9 +36,18 @@ class BeautyProductScraper {
         document.querySelector('[data-testid="pdp_price"]')?.textContent?.trim() || '';
 
       // Ingredients from description or dedicated section
-      const ingredientsText = document.querySelector('.css-1l5j6ho')?.textContent ||
+      let ingredientsText =
+        document.querySelector('.css-1l5j6ho')?.textContent ||
         document.querySelector('.ingredient-list')?.textContent ||
         document.querySelector('[data-testid="pdp_ingredients"]')?.textContent || '';
+
+      // Try to get from #content-details > p:first-of-type if not found
+      if (!ingredientsText) {
+        const contentDetails = document.querySelector('#content-details p');
+        if (contentDetails) {
+          ingredientsText = contentDetails.textContent || '';
+        }
+      }
 
       const ingredients = this.parseIngredients(ingredientsText);
 
