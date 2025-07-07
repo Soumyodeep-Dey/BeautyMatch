@@ -48,21 +48,21 @@ export default function App() {
   const analyzeCurrentPage = async () => {
     setLoading(true)
     setError('')
-    
+
     try {
       // Get current active tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      
+
       if (!tab.id) {
         throw new Error('Cannot access current tab')
       }
 
       // Send message to content script
       const response = await chrome.tabs.sendMessage(tab.id, { action: "GET_PRODUCT_INFO" })
-      
+
       if (response.success && response.data) {
         setProductInfo(response.data)
-        
+
         if (skinProfile) {
           const result = matchProductToProfile(response.data, skinProfile)
           setMatchResult(result)
