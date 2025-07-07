@@ -377,8 +377,18 @@ function App() {
         setError(response.error || 'No product found on this page')
       }
     } catch (err) {
-      setError('Failed to analyze page. Make sure you\'re on a beauty product page.')
-      console.error('Analysis error:', err)
+      if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as any).message === 'string' &&
+        (err as any).message.includes('Could not establish connection')
+      ) {
+        setError('Could not analyze this page. Please make sure you are on a supported product page.');
+      } else {
+        setError('Failed to analyze page. Make sure you\'re on a beauty product page.');
+      }
+      console.error('Analysis error:', err);
     } finally {
       setLoading(false)
     }
