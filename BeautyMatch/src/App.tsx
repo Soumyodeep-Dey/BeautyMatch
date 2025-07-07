@@ -1,58 +1,8 @@
 // src/App.tsx
 import { useState, useEffect, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-
-type ProductInfo = {
-  name: string;
-  brand: string;
-  price?: string;
-  shade?: string;
-  coverage?: string;
-  finish?: string;
-  category?: string;
-  skinType?: string[];
-  ingredients: string[];
-};
-
-type SkinProfile = {
-  skinType: string;
-  skinTone: string;
-  allergies: string[];
-  dislikedBrands?: string[];
-  preferredBrands?: string[];
-};
-
-type Verdict =
-  | "PERFECT_MATCH"
-  | "EXCELLENT_MATCH"
-  | "GOOD_MATCH"
-  | "PARTIAL_MATCH"
-  | "MATCH"
-  | "FAIR_MATCH"
-  | "CAUTION"
-  | "NOT_RECOMMENDED"
-  | "CONTAINS_ALLERGEN"
-  | "MISSING_INFORMATION"
-  | "USER_PREFERENCE_CONFLICT"
-  | "NO_MATCH"
-  | "UNKNOWN";
-
-type MatchResult = {
-  verdict: Verdict;
-  score: number;
-  reasons: string[];
-  warnings: string[];
-  recommendations: string[];
-  breakdown: {
-    skinTypeScore: number;
-    ingredientScore: number;
-    shadeScore: number;
-    brandScore: number;
-    priceScore: number;
-    ratingScore: number;
-    preferenceScore: number;
-  };
-};
+import { analyzeProductAdvanced } from "./analyzeProductAdvanced";
+import type { MatchResult, ProductInfo, SkinProfile } from "./analyzeProductAdvanced";
 
 // Minimal beneficials list for each skin type
 const BENEFICIALS = {
@@ -370,7 +320,7 @@ function App() {
         setProductInfo(response.data)
 
         if (skinProfile) {
-          const result = analyzeProduct(response.data, skinProfile)
+          const result = analyzeProductAdvanced(response.data, skinProfile)
           setMatchResult(result)
         }
       } else {
