@@ -35,21 +35,28 @@ class BeautyProductScraper {
       const price = document.querySelector('.css-1d0jf8e')?.textContent?.trim() ||
         document.querySelector('[data-testid="pdp_price"]')?.textContent?.trim() || '';
 
-      // Ingredients from description or dedicated section
-      let ingredientsText =
-        document.querySelector('.css-1l5j6ho')?.textContent ||
-        document.querySelector('.ingredient-list')?.textContent ||
-        document.querySelector('[data-testid="pdp_ingredients"]')?.textContent || '';
-
-      // Try to get from #content-details > p:first-of-type if not found
-      if (!ingredientsText) {
-        const contentDetails = document.querySelector('#content-details p');
-        if (contentDetails) {
-          ingredientsText = contentDetails.textContent || '';
+      // Ingredients extraction (your new logic)
+      let ingredientsText = "";
+      const descContainer = document.querySelector("#content-details");
+      if (descContainer) {
+        const firstP = descContainer.querySelector("p");
+        if (firstP) {
+          ingredientsText = firstP.textContent?.trim() || "";
         }
       }
-
-      const ingredients = this.parseIngredients(ingredientsText);
+      if (!ingredientsText) {
+        const keyIngP = Array.from(
+          document.querySelectorAll<HTMLParagraphElement>("#content-details .description-expand p")
+        ).find((p) => p.innerHTML.includes("Key Ingredients"));
+        if (keyIngP) {
+          ingredientsText = keyIngP.textContent?.replace(/Key Ingredients:?\s*/i, "").trim() || "";
+        }
+      }
+      const ingredients = ingredientsText
+        .replace(/^"+|"+$/g, "")
+        .split(",")
+        .map((i) => i.trim().toLowerCase())
+        .filter((i) => i.length > 0);
 
       // Shade information
       const activeShade = document.querySelector('.css-1n8i4of.selected')?.textContent?.trim() ||
@@ -171,12 +178,19 @@ class BeautyProductScraper {
     let ingredientText = text.toLowerCase();
 
     // Find ingredient section
+    let foundMarker = false;
     for (const marker of ingredientMarkers) {
       const index = ingredientText.indexOf(marker);
       if (index !== -1) {
         ingredientText = ingredientText.substring(index + marker.length);
+        foundMarker = true;
         break;
       }
+    }
+
+    // If no marker found, but text looks like a list, use it as is
+    if (!foundMarker && (ingredientText.includes(',') || ingredientText.includes(';'))) {
+      // do nothing, use full text
     }
 
     // Split by common separators and clean up
