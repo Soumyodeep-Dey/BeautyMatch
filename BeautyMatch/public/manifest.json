@@ -9,9 +9,9 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.sephora.com/*",
-    "https://www.ulta.com/*",
-    "https://www.beautylish.com/*"
+    "https://*.nykaa.com/*",
+    "https://*.sephora.com/*",
+    "https://*.amazon.in/*"
   ],
   "background": {
     "service_worker": "src/background/background.js",
@@ -20,9 +20,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.sephora.com/*",
-        "https://www.ulta.com/*",
-        "https://www.beautylish.com/*"
+        "https://*.nykaa.com/*",
+        "https://*.sephora.com/*",
+        "https://*.amazon.in/*"
       ],
       "js": [
         "src/content/scraper.js"
@@ -48,7 +48,9 @@
         "onboarding.html",
         "assets/*"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
