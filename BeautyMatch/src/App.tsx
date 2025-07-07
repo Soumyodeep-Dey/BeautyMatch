@@ -229,6 +229,12 @@ function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult
     }
   }
 
+  // Custom logic: if product name or brand contains a plus sign (+), add 20 points
+  if ((product.name && product.name.includes("+")) || (product.brand && product.brand.includes("+"))) {
+    score += 20;
+    reasons.push('Contains a plus sign (+) in name or brand: bonus points awarded.');
+  }
+
   // Cap penalties: don't let score go below 10 unless multiple negatives
   if (score < 10 && (hasAllergen || userPrefConflict)) {
     score = 10;
