@@ -1,288 +1,6 @@
 // src/App.tsx
-import { useState, useEffect, StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { analyzeProductAdvanced } from "./analyzeProductAdvanced";
-import type { MatchResult, ProductInfo, SkinProfile } from "./analyzeProductAdvanced";
-
-// Minimal beneficials list for each skin type
-const BENEFICIALS = {
-  dry: ["hyaluronic acid", "glycerin", "ceramides", "squalane", "shea butter", "jojoba oil", "vitamin e", "niacinamide"],
-  oily: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay", "tea tree oil", "retinol"],
-  sensitive: ["aloe vera", "chamomile", "allantoin", "panthenol", "zinc oxide", "titanium dioxide"],
-  mature: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "niacinamide", "antioxidants"],
-};
-
-// Helper to normalize skin type for beneficials lookup
-function normalizeSkinTypeKey(skinType: string): string {
-  const map: Record<string, string> = {
-    'oily skin': 'oily',
-    'dry skin': 'dry',
-    'sensitive skin': 'sensitive',
-    'mature skin': 'mature',
-    'combination skin': 'combination',
-    'normal skin': 'normal',
-    'acne-prone': 'acne-prone',
-    'oily': 'oily',
-    'dry': 'dry',
-    'sensitive': 'sensitive',
-    'mature': 'mature',
-    'combination': 'combination',
-    'normal': 'normal',
-  };
-  return map[skinType.toLowerCase().trim()] || skinType.toLowerCase().trim();
-}
-
-// Main matching logic
-function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult {
-  // Normalize product.skinType to array
-  let normalizedSkinType: string[] = [];
-  if (product.skinType) {
-    if (Array.isArray(product.skinType)) {
-      normalizedSkinType = product.skinType
-        .filter((s): s is string => typeof s === 'string')
-        .map((s: string) => s.toLowerCase().trim())
-        .filter((s: string) => Boolean(s));
-    } else if (typeof product.skinType === 'string' && (product.skinType as string).length > 0) {
-      normalizedSkinType = [(product.skinType as string).toLowerCase().trim()];
-    }
-    product.skinType = normalizedSkinType;
-  }
-
-  // Normalize brand
-  if (typeof product.brand === 'string') product.brand = product.brand.toLowerCase().trim();
-  if (profile.preferredBrands) profile.preferredBrands = profile.preferredBrands
-    .filter((b): b is string => typeof b === 'string')
-    .map(b => b.toLowerCase().trim())
-    .filter(Boolean);
-  if (profile.dislikedBrands) profile.dislikedBrands = profile.dislikedBrands
-    .filter((b): b is string => typeof b === 'string')
-    .map(b => b.toLowerCase().trim())
-    .filter(Boolean);
-
-  // Normalize skinType in profile
-  if (typeof profile.skinType === 'string' && profile.skinType.length > 0) {
-    profile.skinType = profile.skinType.toLowerCase().trim();
-  }
-
-  // 1. Allergy check
-  const allergyResult = checkAllergies(product.ingredients, profile.allergies);
-  if (allergyResult.hasAllergies) {
-    return {
-      verdict: "CONTAINS_ALLERGEN",
-      score: 0,
-      reasons: [],
-      warnings: allergyResult.warnings,
-      recommendations: [],
-      breakdown: {
-        skinTypeScore: 0,
-        ingredientScore: 0,
-        shadeScore: 0,
-        brandScore: 0,
-        priceScore: 0,
-        ratingScore: 0,
-        preferenceScore: 0
-      }
-    };
-  }
-
-  // 2. Disliked brand check
-  if (profile.dislikedBrands && product.brand && profile.dislikedBrands.includes(product.brand)) {
-    return {
-      verdict: "USER_PREFERENCE_CONFLICT",
-      score: 0,
-      reasons: [],
-      warnings: [`Brand "${product.brand}" is in your disliked brands.`],
-      recommendations: [],
-      breakdown: {
-        skinTypeScore: 0,
-        ingredientScore: 0,
-        shadeScore: 0,
-        brandScore: 0,
-        priceScore: 0,
-        ratingScore: 0,
-        preferenceScore: 0
-      }
-    };
-  }
-
-  // 3. Skin type match logic + beneficials
-  let score = 0;
-  let reasons: string[] = [];
-  let foundBeneficials: string[] = [];
-  let skinTypeMatched = false;
-  let allSkinTypesMatched = false;
-  let partialSkinTypeMatched = false;
-  if (product.skinType && profile.skinType) {
-    // 100: exact match
-    if (product.skinType.some(s => s === profile.skinType)) {
-      score = 100;
-      skinTypeMatched = true;
-      reasons.push(`Perfect match for your skin type (${profile.skinType})`);
-    }
-    // 70: all skin types
-    else if (product.skinType.some(s => s.includes('all skin types'))) {
-      score = 70;
-      allSkinTypesMatched = true;
-      reasons.push('Suitable for all skin types');
-    }
-    // 50: partial/related match (e.g., "dry to normal" for "dry")
-    else if (product.skinType.some(s => s.includes(profile.skinType))) {
-      score = 50;
-      partialSkinTypeMatched = true;
-      reasons.push(`Partial match for your skin type (${profile.skinType})`);
-    }
-  }
-
-  // Check for beneficial ingredients
-  const type = profile.skinType ? normalizeSkinTypeKey(profile.skinType) : "";
-  const beneficials = BENEFICIALS[type as keyof typeof BENEFICIALS] || [];
-  foundBeneficials = product.ingredients.filter((i: string) =>
-    beneficials.some((b: string) => i.toLowerCase().includes(b.toLowerCase()))
-  );
-  if (foundBeneficials.length > 0) {
-    reasons.push(`✨ Contains beneficial ingredients for ${type} skin: ${foundBeneficials.join(", ")}`);
-    if (skinTypeMatched) {
-      score = 100;
-    } else if (allSkinTypesMatched) {
-      score = 90;
-    } else if (partialSkinTypeMatched) {
-      score = 70;
-    } else {
-      score = 50;
-    }
-    // Cap at 100
-    if (score > 100) score = 100;
-    return {
-      verdict: score === 100 ? "MATCH" : score >= 90 ? "GOOD_MATCH" : score >= 50 ? "PARTIAL_MATCH" : "NO_MATCH",
-      score,
-      reasons,
-      warnings: [],
-      recommendations: [],
-      breakdown: {
-        skinTypeScore: skinTypeMatched ? 100 : partialSkinTypeMatched ? 50 : allSkinTypesMatched ? 70 : 0,
-        ingredientScore: 20,
-        shadeScore: 0,
-        brandScore: 0,
-        priceScore: 0,
-        ratingScore: 0,
-        preferenceScore: 0
-      }
-    };
-  }
-
-  if (score > 0) {
-    return {
-      verdict: score === 100 ? "MATCH" : score >= 90 ? "GOOD_MATCH" : score >= 50 ? "PARTIAL_MATCH" : "NO_MATCH",
-      score,
-      reasons,
-      warnings: [],
-      recommendations: [],
-      breakdown: {
-        skinTypeScore: skinTypeMatched ? 100 : partialSkinTypeMatched ? 50 : allSkinTypesMatched ? 70 : 0,
-        ingredientScore: 0,
-        shadeScore: 0,
-        brandScore: 0,
-        priceScore: 0,
-        ratingScore: 0,
-        preferenceScore: 0
-      }
-    };
-  }
-
-  // 4. No match
-  return {
-    verdict: "NO_MATCH",
-    score: 0,
-    reasons: [],
-    warnings: ["No significant match found for your profile."],
-    recommendations: [],
-    breakdown: {
-      skinTypeScore: 0,
-      ingredientScore: 0,
-      shadeScore: 0,
-      brandScore: 0,
-      priceScore: 0,
-      ratingScore: 0,
-      preferenceScore: 0
-    }
-  };
-}
-
-function checkAllergies(ingredients: string[], allergies: string[]): { hasAllergies: boolean; warnings: string[] } {
-  const warnings: string[] = [];
-  let hasAllergies = false;
-  for (const allergy of allergies) {
-    const allergyLower = allergy.toLowerCase().trim();
-    for (const ingredient of ingredients) {
-      if (ingredient.toLowerCase().includes(allergyLower)) {
-        hasAllergies = true;
-        warnings.push(`⚠️ Contains ${ingredient} (matches your allergy: ${allergy})`);
-      }
-    }
-  }
-  return { hasAllergies, warnings };
-}
-
-// Minimal verdict helpers for simplified logic
-function getVerdictColor(verdict: string) {
-  switch (verdict) {
-    case 'MATCH': return 'text-green-700 bg-green-50';
-    case 'GOOD_MATCH': return 'text-blue-700 bg-blue-50';
-    case 'PARTIAL_MATCH': return 'text-yellow-700 bg-yellow-50';
-    case 'CONTAINS_ALLERGEN': return 'text-red-800 bg-red-100';
-    case 'USER_PREFERENCE_CONFLICT': return 'text-pink-700 bg-pink-100';
-    case 'NO_MATCH': return 'text-gray-500 bg-gray-100';
-    default: return 'text-gray-600 bg-gray-50';
-  }
-}
-
-function getVerdictEmoji(verdict: string) {
-  switch (verdict) {
-    case 'MATCH': return '✅';
-    case 'GOOD_MATCH': return '👍';
-    case 'PARTIAL_MATCH': return '👌';
-    case 'CONTAINS_ALLERGEN': return '🚫';
-    case 'USER_PREFERENCE_CONFLICT': return '🙅';
-    case 'NO_MATCH': return '🤷';
-    default: return '🤔';
-  }
-}
-
-function formatVerdict(verdict: string) {
-  if (verdict === 'NO_MATCH') return 'No Match';
-  if (verdict === 'MATCH') return 'Perfect Match';
-  if (verdict === 'GOOD_MATCH') return 'Good Match';
-  if (verdict === 'PARTIAL_MATCH') return 'Partial Match';
-  if (verdict === 'CONTAINS_ALLERGEN') return 'Contains Allergen';
-  if (verdict === 'USER_PREFERENCE_CONFLICT') return 'Preference Conflict';
-  return verdict
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, l => l.toUpperCase());
-}
-
-// Suggestion generator based on skin type
-function getProfileSuggestion(profile: SkinProfile): string {
-  const type = profile.skinType?.toLowerCase() || "";
-  switch (type) {
-    case "oily":
-      return "Look for lightweight, oil-free, and non-comedogenic products with niacinamide or salicylic acid.";
-    case "dry":
-      return "Choose hydrating products with hyaluronic acid, glycerin, or ceramides.";
-    case "sensitive":
-      return "Opt for fragrance-free, gentle products with soothing ingredients like aloe vera or chamomile.";
-    case "mature":
-      return "Seek products with retinol, peptides, or antioxidants to support mature skin.";
-    case "combination":
-      return "Use balanced formulas that hydrate dry areas and control oil in the T-zone.";
-    case "acne-prone":
-      return "Pick non-comedogenic products with salicylic acid or tea tree oil to help prevent breakouts.";
-    case "normal":
-      return "Maintain your skin with gentle, balanced products and regular hydration.";
-    default:
-      return "Choose products that match your skin's unique needs and avoid known irritants.";
-  }
-}
+import { useState, useEffect } from "react";
+import { analyzeProductAdvanced, type MatchResult, type ProductInfo, type SkinProfile } from "./content/scraper";
 
 // Main Popup Component
 function App() {
@@ -395,9 +113,6 @@ function App() {
               <div><strong>Allergies:</strong> {skinProfile.allergies.join(', ')}</div>
             )}
           </div>
-          <div className="mt-2 text-xs text-blue-700 font-medium">
-            {getProfileSuggestion(skinProfile)}
-          </div>
         </div>
 
         {/* Analysis Button */}
@@ -442,36 +157,15 @@ function App() {
         {matchResult && (
           <div className="bg-white rounded-lg p-4 shadow-sm">
             {/* Verdict */}
-            <div className={`rounded-lg p-3 mb-3 ${getVerdictColor(matchResult.verdict)}`}>
+            <div className="rounded-lg p-3 mb-3 bg-gray-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{getVerdictEmoji(matchResult.verdict)}</span>
-                  <span className="font-semibold">{formatVerdict(matchResult.verdict)}</span>
+                  <span className="text-xl">{matchResult.verdict}</span>
+                  <span className="font-semibold">{matchResult.score}/100</span>
+                  <span className="text-xs text-gray-500">Confidence: {matchResult.confidence || 0}%</span>
                 </div>
-                <div className="text-sm font-medium">{matchResult.score}/100</div>
               </div>
             </div>
-            {matchResult.verdict === 'NO_MATCH' && (
-              <div className="mb-3 text-sm text-gray-700">
-                This product does not match your profile or preferences in any significant way.
-              </div>
-            )}
-            {/* Special verdict messages */}
-            {matchResult.verdict === 'MISSING_INFORMATION' && (
-              <div className="mb-3 text-sm text-gray-700">
-                Not enough information to make a confident recommendation. Please provide more details in your profile or ensure the product page is complete.
-              </div>
-            )}
-            {matchResult.verdict === 'USER_PREFERENCE_CONFLICT' && (
-              <div className="mb-3 text-sm text-pink-700">
-                This product conflicts with your stated preferences (e.g., disliked brand or formulation).
-              </div>
-            )}
-            {matchResult.verdict === 'CONTAINS_ALLERGEN' && (
-              <div className="mb-3 text-sm text-red-700">
-                This product contains an ingredient you want to avoid or are allergic to.
-              </div>
-            )}
             {/* Reasons */}
             {matchResult.reasons.length > 0 && (
               <div className="mb-3">
@@ -514,6 +208,35 @@ function App() {
                 </div>
               </div>
             )}
+            {/* Detailed Analysis */}
+            <div className="mt-4">
+              <h3 className="font-medium text-gray-800 mb-2">Detailed Analysis</h3>
+              <div className="text-xs text-gray-700 mb-1">
+                <strong>Beneficial Ingredients:</strong> {matchResult.detailedAnalysis?.beneficialIngredients?.join(', ') || 'None'}
+              </div>
+              <div className="text-xs text-gray-700 mb-1">
+                <strong>Problematic Ingredients:</strong> {matchResult.detailedAnalysis?.problematicIngredients?.join(', ') || 'None'}
+              </div>
+              <div className="text-xs text-gray-700 mb-1">
+                <strong>Neutral Ingredients:</strong> {matchResult.detailedAnalysis?.neutralIngredients?.join(', ') || 'None'}
+              </div>
+              <div className="text-xs text-gray-700 mb-1">
+                <strong>Missing Beneficials:</strong> {matchResult.detailedAnalysis?.missingBeneficials?.join(', ') || 'None'}
+              </div>
+              <div className="text-xs text-gray-700 mb-1">
+                <strong>Compatibility Notes:</strong> {matchResult.detailedAnalysis?.compatibilityNotes?.join('; ') || 'None'}
+              </div>
+            </div>
+            {/* Breakdown */}
+            <div className="mt-4">
+              <h3 className="font-medium text-gray-800 mb-2">Score Breakdown</h3>
+              <div className="text-xs text-gray-700 mb-1">Skin Type: {matchResult.breakdown.skinTypeScore}</div>
+              <div className="text-xs text-gray-700 mb-1">Ingredients: {matchResult.breakdown.ingredientScore}</div>
+              <div className="text-xs text-gray-700 mb-1">Concerns: {matchResult.breakdown.concernsScore}</div>
+              <div className="text-xs text-gray-700 mb-1">Preferences: {matchResult.breakdown.preferenceScore}</div>
+              <div className="text-xs text-gray-700 mb-1">Brand: {matchResult.breakdown.brandScore}</div>
+              <div className="text-xs text-gray-700 mb-1">Safety: {matchResult.breakdown.safetyScore}</div>
+            </div>
           </div>
         )}
 
@@ -530,11 +253,4 @@ function App() {
 
 export default App;
 
-const rootEl = document.getElementById("root");
-if (rootEl) {
-  createRoot(rootEl).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
-}
+ 

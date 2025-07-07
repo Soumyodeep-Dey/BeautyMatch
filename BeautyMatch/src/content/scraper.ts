@@ -1,15 +1,4 @@
 // src/content/scraper.ts
-interface ProductInfo {
-  name: string;
-  brand: string;
-  ingredients: string[];
-  shade?: string;
-  formulation?: string;
-  category?: string;
-  skinType?: string[];
-  coverage?: string;
-  finish?: string;
-}
 
 class BeautyProductScraper {
   getCurrentSite(): string {
@@ -475,3 +464,646 @@ const observer = new MutationObserver(() => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+// --- ADVANCED BEAUTYMATCH ALGORITHM ---
+
+type ProductInfo = {
+  name: string;
+  brand: string;
+  price?: string;
+  shade?: string;
+  coverage?: string;
+  finish?: string;
+  category?: string;
+  skinType?: string[];
+  ingredients: string[];
+  formulation?: string;
+};
+
+type SkinProfile = {
+  skinType: string;
+  skinTone: string;
+  allergies: string[];
+  dislikedBrands?: string[];
+  preferredBrands?: string[];
+  skinConcerns?: string[];
+  preferredFinish?: string;
+  preferredCoverage?: string;
+  budgetRange?: string;
+};
+
+type Verdict =
+  | "PERFECT_MATCH"
+  | "EXCELLENT_MATCH"
+  | "GOOD_MATCH"
+  | "PARTIAL_MATCH"
+  | "FAIR_MATCH"
+  | "CAUTION"
+  | "NOT_RECOMMENDED"
+  | "CONTAINS_ALLERGEN"
+  | "MISSING_INFORMATION"
+  | "USER_PREFERENCE_CONFLICT"
+  | "NO_MATCH";
+
+type MatchResult = {
+  verdict: Verdict;
+  score: number;
+  confidence: number;
+  reasons: string[];
+  warnings: string[];
+  recommendations: string[];
+  breakdown: {
+    skinTypeScore: number;
+    ingredientScore: number;
+    shadeScore: number;
+    brandScore: number;
+    priceScore: number;
+    preferenceScore: number;
+    categoryScore: number;
+    concernsScore: number;
+    safetyScore: number;
+  };
+  detailedAnalysis: {
+    beneficialIngredients: string[];
+    problematicIngredients: string[];
+    neutralIngredients: string[];
+    missingBeneficials: string[];
+    compatibilityNotes: string[];
+  };
+};
+
+// Enhanced ingredient database
+const INGREDIENT_DATABASE = {
+  beneficial: {
+    dry: [
+      { name: "hyaluronic acid", score: 25, description: "Intense hydration" },
+      { name: "glycerin", score: 20, description: "Moisture retention" },
+      { name: "ceramides", score: 25, description: "Barrier repair" },
+      { name: "squalane", score: 20, description: "Lightweight moisture" },
+      { name: "shea butter", score: 15, description: "Nourishing" },
+      { name: "jojoba oil", score: 15, description: "Skin-mimicking oil" },
+      { name: "vitamin e", score: 10, description: "Antioxidant protection" },
+      { name: "niacinamide", score: 15, description: "Barrier support" },
+      { name: "peptides", score: 20, description: "Skin repair" },
+      { name: "panthenol", score: 15, description: "Soothing hydration" }
+    ],
+    oily: [
+      { name: "niacinamide", score: 25, description: "Oil control" },
+      { name: "salicylic acid", score: 20, description: "Pore cleaning" },
+      { name: "zinc oxide", score: 15, description: "Oil absorption" },
+      { name: "kaolin clay", score: 15, description: "Mattifying" },
+      { name: "tea tree oil", score: 10, description: "Antibacterial" },
+      { name: "retinol", score: 20, description: "Pore refinement" },
+      { name: "benzoyl peroxide", score: 15, description: "Acne treatment" },
+      { name: "dimethicone", score: 10, description: "Non-comedogenic base" }
+    ],
+    sensitive: [
+      { name: "aloe vera", score: 20, description: "Soothing" },
+      { name: "chamomile", score: 15, description: "Anti-inflammatory" },
+      { name: "allantoin", score: 15, description: "Healing" },
+      { name: "panthenol", score: 20, description: "Calming" },
+      { name: "zinc oxide", score: 15, description: "Gentle protection" },
+      { name: "titanium dioxide", score: 15, description: "Physical sunscreen" },
+      { name: "oat extract", score: 10, description: "Gentle soothing" },
+      { name: "centella asiatica", score: 20, description: "Anti-inflammatory" }
+    ],
+    mature: [
+      { name: "retinol", score: 30, description: "Anti-aging powerhouse" },
+      { name: "peptides", score: 25, description: "Collagen support" },
+      { name: "vitamin c", score: 25, description: "Antioxidant brightening" },
+      { name: "hyaluronic acid", score: 20, description: "Plumping hydration" },
+      { name: "niacinamide", score: 15, description: "Skin strengthening" },
+      { name: "bakuchiol", score: 20, description: "Natural retinol alternative" },
+      { name: "coenzyme q10", score: 15, description: "Cellular energy" },
+      { name: "alpha lipoic acid", score: 15, description: "Antioxidant" }
+    ],
+    combination: [
+      { name: "niacinamide", score: 25, description: "Balanced oil control" },
+      { name: "hyaluronic acid", score: 20, description: "Hydrates without oil" },
+      { name: "salicylic acid", score: 15, description: "T-zone treatment" },
+      { name: "zinc oxide", score: 10, description: "Gentle oil control" },
+      { name: "glycerin", score: 15, description: "Balanced moisture" }
+    ],
+    "acne-prone": [
+      { name: "salicylic acid", score: 30, description: "Acne treatment" },
+      { name: "benzoyl peroxide", score: 25, description: "Bacteria fighting" },
+      { name: "niacinamide", score: 20, description: "Reduces inflammation" },
+      { name: "tea tree oil", score: 15, description: "Natural antibacterial" },
+      { name: "zinc oxide", score: 15, description: "Healing support" },
+      { name: "retinol", score: 20, description: "Prevents clogged pores" }
+    ]
+  },
+  problematic: {
+    dry: [
+      { name: "alcohol denat", score: -20, description: "Drying agent" },
+      { name: "sodium lauryl sulfate", score: -15, description: "Harsh cleanser" },
+      { name: "menthol", score: -10, description: "Can irritate dry skin" },
+      { name: "high concentration acids", score: -15, description: "Can over-exfoliate" }
+    ],
+    oily: [
+      { name: "mineral oil", score: -15, description: "Can clog pores" },
+      { name: "coconut oil", score: -10, description: "Comedogenic" },
+      { name: "heavy oils", score: -10, description: "May increase oiliness" },
+      { name: "lanolin", score: -10, description: "Can clog pores" }
+    ],
+    sensitive: [
+      { name: "fragrance", score: -25, description: "Common irritant" },
+      { name: "essential oils", score: -20, description: "Can cause reactions" },
+      { name: "alcohol denat", score: -20, description: "Drying and irritating" },
+      { name: "retinol", score: -15, description: "Can cause irritation" },
+      { name: "alpha hydroxy acids", score: -15, description: "Can irritate" },
+      { name: "beta hydroxy acids", score: -15, description: "Can irritate" }
+    ],
+    mature: [
+      { name: "alcohol denat", score: -15, description: "Drying to aging skin" },
+      { name: "harsh sulfates", score: -10, description: "Strip natural oils" }
+    ],
+    combination: [
+      { name: "heavy oils", score: -10, description: "Can worsen oily areas" },
+      { name: "alcohol denat", score: -15, description: "Can dry out already dry areas" }
+    ],
+    "acne-prone": [
+      { name: "coconut oil", score: -20, description: "Highly comedogenic" },
+      { name: "cocoa butter", score: -15, description: "Can clog pores" },
+      { name: "lanolin", score: -15, description: "May cause breakouts" },
+      { name: "mineral oil", score: -10, description: "Can clog pores" }
+    ]
+  },
+  universal_problematic: [
+    { name: "parabens", score: -5, description: "Preservative sensitivity" },
+    { name: "sulfates", score: -5, description: "Can be harsh" },
+    { name: "synthetic fragrance", score: -10, description: "Common allergen" }
+  ]
+};
+
+// Skin concern specific ingredients
+const CONCERN_INGREDIENTS = {
+  acne: ["salicylic acid", "benzoyl peroxide", "niacinamide", "tea tree oil", "zinc oxide"],
+  aging: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "bakuchiol"],
+  hyperpigmentation: ["vitamin c", "niacinamide", "kojic acid", "arbutin", "licorice root"],
+  dryness: ["hyaluronic acid", "ceramides", "glycerin", "squalane", "shea butter"],
+  sensitivity: ["aloe vera", "chamomile", "allantoin", "panthenol", "centella asiatica"],
+  dullness: ["vitamin c", "glycolic acid", "lactic acid", "niacinamide", "retinol"],
+  enlarged_pores: ["niacinamide", "salicylic acid", "retinol", "zinc oxide"],
+  oiliness: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay"]
+};
+
+// Paste all helper functions and analyzeProductAdvanced here
+
+function analyzeProductAdvanced(product: ProductInfo, profile: SkinProfile): MatchResult {
+  // Initialize result structure
+  const result: MatchResult = {
+    verdict: "NO_MATCH",
+    score: 0,
+    confidence: 0,
+    reasons: [],
+    warnings: [],
+    recommendations: [],
+    breakdown: {
+      skinTypeScore: 0,
+      ingredientScore: 0,
+      shadeScore: 0,
+      brandScore: 0,
+      priceScore: 0,
+      preferenceScore: 0,
+      categoryScore: 0,
+      concernsScore: 0,
+      safetyScore: 100
+    },
+    detailedAnalysis: {
+      beneficialIngredients: [],
+      problematicIngredients: [],
+      neutralIngredients: [],
+      missingBeneficials: [],
+      compatibilityNotes: []
+    }
+  };
+
+  // Normalize inputs
+  const normalizedProduct = normalizeProduct(product);
+  const normalizedProfile = normalizeProfile(profile);
+
+  // 1. SAFETY CHECK - Allergens (Critical - immediate disqualification)
+  const allergyCheck = checkAllergies(normalizedProduct.ingredients, normalizedProfile.allergies);
+  if (allergyCheck.hasAllergies) {
+    result.verdict = "CONTAINS_ALLERGEN";
+    result.warnings = allergyCheck.warnings;
+    result.breakdown.safetyScore = 0;
+    result.confidence = 100;
+    return result;
+  }
+
+  // 2. BRAND PREFERENCE CHECK
+  const brandCheck = checkBrandPreferences(normalizedProduct.brand, normalizedProfile);
+  if (brandCheck.isDisliked) {
+    result.verdict = "USER_PREFERENCE_CONFLICT";
+    result.warnings = brandCheck.warnings;
+    result.breakdown.brandScore = 0;
+    result.confidence = 90;
+    return result;
+  }
+  result.breakdown.brandScore = brandCheck.score;
+  if (brandCheck.reasons.length > 0) result.reasons.push(...brandCheck.reasons);
+
+  // 3. SKIN TYPE COMPATIBILITY (30% weight)
+  const skinTypeAnalysis = analyzeSkinTypeCompatibility(normalizedProduct, normalizedProfile);
+  result.breakdown.skinTypeScore = skinTypeAnalysis.score;
+  result.reasons.push(...skinTypeAnalysis.reasons);
+  result.warnings.push(...skinTypeAnalysis.warnings);
+
+  // 4. INGREDIENT ANALYSIS (40% weight)
+  const ingredientAnalysis = analyzeIngredients(normalizedProduct.ingredients, normalizedProfile);
+  result.breakdown.ingredientScore = ingredientAnalysis.score;
+  result.reasons.push(...ingredientAnalysis.reasons);
+  result.warnings.push(...ingredientAnalysis.warnings);
+  result.detailedAnalysis.beneficialIngredients = ingredientAnalysis.beneficial;
+  result.detailedAnalysis.problematicIngredients = ingredientAnalysis.problematic;
+  result.detailedAnalysis.neutralIngredients = ingredientAnalysis.neutral;
+
+  // 5. SKIN CONCERNS ANALYSIS (20% weight)
+  const concernsAnalysis = analyzeSkinConcerns(normalizedProduct.ingredients, normalizedProfile.skinConcerns || []);
+  result.breakdown.concernsScore = concernsAnalysis.score;
+  result.reasons.push(...concernsAnalysis.reasons);
+  result.detailedAnalysis.missingBeneficials = concernsAnalysis.missingBeneficials;
+
+  // 6. PREFERENCE MATCHING (10% weight)
+  const preferenceAnalysis = analyzePreferences(normalizedProduct, normalizedProfile);
+  result.breakdown.preferenceScore = preferenceAnalysis.score;
+  result.reasons.push(...preferenceAnalysis.reasons);
+
+  // 7. CALCULATE FINAL SCORE
+  const weights = {
+    skinType: 0.30,
+    ingredients: 0.40,
+    concerns: 0.20,
+    preferences: 0.10
+  };
+
+  result.score = Math.round(
+    (result.breakdown.skinTypeScore * weights.skinType) +
+    (result.breakdown.ingredientScore * weights.ingredients) +
+    (result.breakdown.concernsScore * weights.concerns) +
+    (result.breakdown.preferenceScore * weights.preferences) +
+    (result.breakdown.brandScore * 0.05) // Bonus for preferred brands
+  );
+
+  // 8. DETERMINE VERDICT AND CONFIDENCE
+  const verdictAnalysis = determineVerdict(result.score, result.breakdown);
+  result.verdict = verdictAnalysis.verdict;
+  result.confidence = verdictAnalysis.confidence;
+
+  // 9. GENERATE RECOMMENDATIONS
+  result.recommendations = generateRecommendations(result, normalizedProduct, normalizedProfile);
+
+  // 10. ADD COMPATIBILITY NOTES
+  result.detailedAnalysis.compatibilityNotes = generateCompatibilityNotes(result, normalizedProduct, normalizedProfile);
+
+  return result;
+}
+
+function normalizeProduct(product: ProductInfo): ProductInfo {
+  return {
+    ...product,
+    brand: product.brand?.toLowerCase().trim() || '',
+    skinType: product.skinType?.map(s => s.toLowerCase().trim()) || [],
+    ingredients: product.ingredients.map(i => i.toLowerCase().trim()),
+    coverage: product.coverage?.toLowerCase().trim(),
+    finish: product.finish?.toLowerCase().trim(),
+    category: product.category?.toLowerCase().trim()
+  };
+}
+
+function normalizeProfile(profile: SkinProfile): SkinProfile {
+  return {
+    ...profile,
+    skinType: profile.skinType?.toLowerCase().trim() || '',
+    allergies: profile.allergies?.map(a => a.toLowerCase().trim()) || [],
+    dislikedBrands: profile.dislikedBrands?.map(b => b.toLowerCase().trim()) || [],
+    preferredBrands: profile.preferredBrands?.map(b => b.toLowerCase().trim()) || [],
+    skinConcerns: profile.skinConcerns?.map(c => c.toLowerCase().trim()) || [],
+    preferredFinish: profile.preferredFinish?.toLowerCase().trim(),
+    preferredCoverage: profile.preferredCoverage?.toLowerCase().trim()
+  };
+}
+
+function checkAllergies(ingredients: string[], allergies: string[]): { hasAllergies: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+  let hasAllergies = false;
+
+  for (const allergy of allergies) {
+    for (const ingredient of ingredients) {
+      if (ingredient.includes(allergy) || allergy.includes(ingredient)) {
+        hasAllergies = true;
+        warnings.push(`🚫 Contains ${ingredient} (allergen: ${allergy})`);
+      }
+    }
+  }
+
+  return { hasAllergies, warnings };
+}
+
+function checkBrandPreferences(brand: string, profile: SkinProfile): { score: number; isDisliked: boolean; reasons: string[]; warnings: string[] } {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+
+  // Check disliked brands
+  if (profile.dislikedBrands?.includes(brand)) {
+    return {
+      score: 0,
+      isDisliked: true,
+      reasons: [],
+      warnings: [`❌ "${brand}" is in your disliked brands list`]
+    };
+  }
+
+  // Check preferred brands
+  if (profile.preferredBrands?.includes(brand)) {
+    reasons.push(`💖 "${brand}" is one of your preferred brands`);
+    return { score: 20, isDisliked: false, reasons, warnings };
+  }
+
+  return { score: 0, isDisliked: false, reasons, warnings };
+}
+
+function analyzeSkinTypeCompatibility(product: ProductInfo, profile: SkinProfile): { score: number; reasons: string[]; warnings: string[] } {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+
+  if (!product.skinType || product.skinType.length === 0) {
+    warnings.push("⚠️ No skin type information available for this product");
+    return { score: 50, reasons, warnings }; // Neutral score for missing info
+  }
+
+  // Perfect match
+  if (product.skinType.includes(profile.skinType)) {
+    reasons.push(`✅ Perfect match for ${profile.skinType} skin`);
+    return { score: 100, reasons, warnings };
+  }
+
+  // Universal products
+  if (product.skinType.some(type => type.includes('all skin types'))) {
+    reasons.push(`✅ Suitable for all skin types, including ${profile.skinType}`);
+    return { score: 85, reasons, warnings };
+  }
+
+  // Partial matches
+  const partialMatches = product.skinType.filter(type => 
+    type.includes(profile.skinType) || profile.skinType.includes(type)
+  );
+
+  if (partialMatches.length > 0) {
+    reasons.push(`⚡ Partial compatibility: ${partialMatches.join(', ')}`);
+    return { score: 70, reasons, warnings };
+  }
+
+  // No match
+  warnings.push(`⚠️ Formulated for ${product.skinType.join(', ')}, you have ${profile.skinType} skin`);
+  return { score: 30, reasons, warnings };
+}
+
+function analyzeIngredients(ingredients: string[], profile: SkinProfile): { 
+  score: number; 
+  reasons: string[]; 
+  warnings: string[]; 
+  beneficial: string[]; 
+  problematic: string[];
+  neutral: string[];
+} {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+  const beneficial: string[] = [];
+  const problematic: string[] = [];
+  const neutral: string[] = [];
+
+  let totalScore = 0;
+  let scoreCount = 0;
+
+  const skinTypeKey = normalizeSkinTypeKey(profile.skinType);
+  const beneficialIngredients = INGREDIENT_DATABASE.beneficial[skinTypeKey as keyof typeof INGREDIENT_DATABASE.beneficial] || [];
+  const problematicIngredients = INGREDIENT_DATABASE.problematic[skinTypeKey as keyof typeof INGREDIENT_DATABASE.problematic] || [];
+
+  // Check beneficial ingredients
+  for (const ingredient of ingredients) {
+    const beneficialMatch = beneficialIngredients.find(b => 
+      ingredient.includes(b.name) || b.name.includes(ingredient)
+    );
+    
+    if (beneficialMatch) {
+      beneficial.push(ingredient);
+      totalScore += beneficialMatch.score;
+      scoreCount++;
+      reasons.push(`✨ ${ingredient} - ${beneficialMatch.description}`);
+    } else {
+      // Check problematic ingredients
+      const problematicMatch = problematicIngredients.find(p => 
+        ingredient.includes(p.name) || p.name.includes(ingredient)
+      );
+      
+      if (problematicMatch) {
+        problematic.push(ingredient);
+        totalScore += problematicMatch.score; // Negative score
+        scoreCount++;
+        warnings.push(`⚠️ ${ingredient} - ${problematicMatch.description}`);
+      } else {
+        neutral.push(ingredient);
+      }
+    }
+  }
+
+  // Check universal problematic ingredients
+  for (const ingredient of ingredients) {
+    const universalProblematic = INGREDIENT_DATABASE.universal_problematic.find(p => 
+      ingredient.includes(p.name) || p.name.includes(ingredient)
+    );
+    
+    if (universalProblematic && !problematic.includes(ingredient)) {
+      problematic.push(ingredient);
+      totalScore += universalProblematic.score;
+      scoreCount++;
+      warnings.push(`⚠️ ${ingredient} - ${universalProblematic.description}`);
+    }
+  }
+
+  const finalScore = scoreCount > 0 ? Math.max(0, Math.min(100, 50 + (totalScore / scoreCount))) : 50;
+
+  return {
+    score: Math.round(finalScore),
+    reasons,
+    warnings,
+    beneficial,
+    problematic,
+    neutral
+  };
+}
+
+function analyzeSkinConcerns(ingredients: string[], concerns: string[]): { 
+  score: number; 
+  reasons: string[]; 
+  missingBeneficials: string[];
+} {
+  const reasons: string[] = [];
+  const missingBeneficials: string[] = [];
+  let totalScore = 0;
+
+  if (concerns.length === 0) {
+    return { score: 50, reasons, missingBeneficials }; // Neutral if no concerns specified
+  }
+
+  let concernsAddressed = 0;
+
+  for (const concern of concerns) {
+    const concernIngredients = CONCERN_INGREDIENTS[concern as keyof typeof CONCERN_INGREDIENTS] || [];
+    const foundIngredients = ingredients.filter(ingredient => 
+      concernIngredients.some(ci => ingredient.includes(ci) || ci.includes(ingredient))
+    );
+
+    if (foundIngredients.length > 0) {
+      concernsAddressed++;
+      reasons.push(`🎯 Addresses ${concern}: ${foundIngredients.join(', ')}`);
+    } else {
+      const missingForConcern = concernIngredients.filter(ci => 
+        !ingredients.some(ingredient => ingredient.includes(ci) || ci.includes(ingredient))
+      );
+      missingBeneficials.push(...missingForConcern);
+    }
+  }
+
+  totalScore = (concernsAddressed / concerns.length) * 100;
+
+  return {
+    score: Math.round(totalScore),
+    reasons,
+    missingBeneficials: [...new Set(missingBeneficials)] // Remove duplicates
+  };
+}
+
+function analyzePreferences(product: ProductInfo, profile: SkinProfile): { score: number; reasons: string[] } {
+  const reasons: string[] = [];
+  let score = 0;
+  let totalPreferences = 0;
+
+  // Check finish preference
+  if (profile.preferredFinish && product.finish) {
+    totalPreferences++;
+    if (product.finish.includes(profile.preferredFinish)) {
+      score += 50;
+      reasons.push(`💄 Matches your preferred ${profile.preferredFinish} finish`);
+    }
+  }
+
+  // Check coverage preference
+  if (profile.preferredCoverage && product.coverage) {
+    totalPreferences++;
+    if (product.coverage.includes(profile.preferredCoverage)) {
+      score += 50;
+      reasons.push(`🎨 Matches your preferred ${profile.preferredCoverage} coverage`);
+    }
+  }
+
+  return {
+    score: totalPreferences > 0 ? Math.round(score / totalPreferences) : 50,
+    reasons
+  };
+}
+
+function determineVerdict(score: number, breakdown: MatchResult['breakdown']): { verdict: Verdict; confidence: number } {
+  let confidence = 70; // Base confidence
+
+  // Adjust confidence based on data availability
+  if (breakdown.skinTypeScore > 0) confidence += 10;
+  if (breakdown.ingredientScore > 0) confidence += 15;
+  if (breakdown.concernsScore > 0) confidence += 5;
+
+  // Determine verdict based on score
+  if (score >= 90) return { verdict: "PERFECT_MATCH", confidence: Math.min(confidence + 10, 100) };
+  if (score >= 80) return { verdict: "EXCELLENT_MATCH", confidence: Math.min(confidence + 5, 100) };
+  if (score >= 70) return { verdict: "GOOD_MATCH", confidence };
+  if (score >= 60) return { verdict: "PARTIAL_MATCH", confidence: Math.max(confidence - 5, 60) };
+  if (score >= 50) return { verdict: "FAIR_MATCH", confidence: Math.max(confidence - 10, 50) };
+  if (score >= 40) return { verdict: "CAUTION", confidence: Math.max(confidence - 15, 40) };
+  
+  return { verdict: "NOT_RECOMMENDED", confidence: Math.max(confidence - 20, 30) };
+}
+
+function generateRecommendations(result: MatchResult, product: ProductInfo, profile: SkinProfile): string[] {
+  const recommendations: string[] = [];
+
+  // Based on verdict
+  if (result.verdict === "PERFECT_MATCH" || result.verdict === "EXCELLENT_MATCH") {
+    recommendations.push(`🎉 ${product.name} by ${product.brand} is an excellent match for your ${profile.skinType} skin profile!`);
+    if (result.detailedAnalysis.beneficialIngredients.length > 0) {
+      recommendations.push(`💡 Key benefits: ${result.detailedAnalysis.beneficialIngredients.slice(0, 3).join(', ')}`);
+    }
+  }
+
+  if (result.verdict === "GOOD_MATCH") {
+    recommendations.push(`👍 ${product.name} is a good match for your ${profile.skinType} skin with some great benefits.`);
+  }
+
+  if (result.verdict === "PARTIAL_MATCH") {
+    recommendations.push(`⚡ Consider trying ${product.name}, but monitor your ${profile.skinType} skin's response.`);
+  }
+
+  if (result.verdict === "CAUTION" || result.verdict === "NOT_RECOMMENDED") {
+    recommendations.push(`🤔 ${product.name} may not be ideal for your ${profile.skinType} skin type.`);
+    if (result.detailedAnalysis.problematicIngredients.length > 0) {
+      recommendations.push(`⚠️ Potential concerns: ${result.detailedAnalysis.problematicIngredients.slice(0, 2).join(', ')}`);
+    }
+  }
+
+  // Missing beneficials
+  if (result.detailedAnalysis.missingBeneficials.length > 0) {
+    recommendations.push(`🔍 For your ${profile.skinType} skin, look for products with: ${result.detailedAnalysis.missingBeneficials.slice(0, 3).join(', ')}`);
+  }
+
+  return recommendations;
+}
+
+function generateCompatibilityNotes(result: MatchResult, product: ProductInfo, profile: SkinProfile): string[] {
+  const notes: string[] = [];
+
+  // Skin type compatibility
+  if (result.breakdown.skinTypeScore < 70) {
+    notes.push(`Consider patch testing ${product.name} as it is formulated for different skin types than your ${profile.skinType} skin.`);
+  }
+
+  // Ingredient interactions
+  if (result.detailedAnalysis.problematicIngredients.length > 0) {
+    notes.push(`Monitor for sensitivity to ${product.name} due to: ${result.detailedAnalysis.problematicIngredients.slice(0, 2).join(', ')}`);
+  }
+
+  // Usage recommendations
+  if (result.detailedAnalysis.beneficialIngredients.some(i => i.includes('retinol') || i.includes('acid'))) {
+    notes.push(`Start with less frequent use of ${product.name} to build tolerance, especially for actives like retinol or acids.`);
+  }
+
+  // Brand-specific note
+  if (product.brand && profile.preferredBrands && profile.preferredBrands.includes(product.brand)) {
+    notes.push(`This product is from your preferred brand: ${product.brand}.`);
+  }
+
+  return notes;
+}
+
+// Utility function for skin type normalization
+function normalizeSkinTypeKey(skinType: string): string {
+  const map: Record<string, string> = {
+    'oily skin': 'oily',
+    'dry skin': 'dry',
+    'sensitive skin': 'sensitive',
+    'mature skin': 'mature',
+    'combination skin': 'combination',
+    'normal skin': 'normal',
+    'acne-prone': 'acne-prone',
+    'acne prone': 'acne-prone',
+    'oily': 'oily',
+    'dry': 'dry',
+    'sensitive': 'sensitive',
+    'mature': 'mature',
+    'combination': 'combination',
+    'normal': 'normal',
+  };
+  return map[skinType.toLowerCase().trim()] || skinType.toLowerCase().trim();
+}
+
+export { analyzeProductAdvanced, type MatchResult, type ProductInfo, type SkinProfile };
