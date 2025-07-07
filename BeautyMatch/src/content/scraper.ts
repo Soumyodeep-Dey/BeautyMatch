@@ -5,7 +5,6 @@ interface ProductInfo {
   ingredients: string[];
   shade?: string;
   formulation?: string;
-  price?: string;
   category?: string;
   skinType?: string[];
   coverage?: string;
@@ -32,11 +31,10 @@ class BeautyProductScraper {
       const brand = document.querySelector('.css-1y64oha')?.textContent?.trim() ||
         document.querySelector('[data-testid="pdp_product_brand"]')?.textContent?.trim() || '';
 
-      const price = document.querySelector('.css-1d0jf8e')?.textContent?.trim() ||
-        document.querySelector('[data-testid="pdp_price"]')?.textContent?.trim() || '';
-
-      // Ingredients extraction (your new logic)
+      // --- Robust Ingredients Extraction for Nykaa ---
+      let ingredients: string[] = [];
       let ingredientsText = "";
+      // 1. Try the first <p> in #content-details
       const descContainer = document.querySelector("#content-details");
       if (descContainer) {
         const firstP = descContainer.querySelector("p");
@@ -44,19 +42,27 @@ class BeautyProductScraper {
           ingredientsText = firstP.textContent?.trim() || "";
         }
       }
+      // 2. Fallback: <p> containing 'Key Ingredients'
       if (!ingredientsText) {
         const keyIngP = Array.from(
-          document.querySelectorAll<HTMLParagraphElement>("#content-details .description-expand p")
-        ).find((p) => p.innerHTML.includes("Key Ingredients"));
+          document.querySelectorAll("#content-details p")
+        ).find((p) => p.innerHTML.toLowerCase().includes("key ingredients"));
         if (keyIngP) {
-          ingredientsText = keyIngP.textContent?.replace(/Key Ingredients:?\s*/i, "").trim() || "";
+          ingredientsText = keyIngP.textContent?.replace(/Key Ingredients:?/i, "").trim() || "";
         }
       }
-      const ingredients = ingredientsText
-        .replace(/^"+|"+$/g, "")
-        .split(",")
-        .map((i) => i.trim().toLowerCase())
-        .filter((i) => i.length > 0);
+      // 3. Parse ingredients from text
+      if (ingredientsText) {
+        ingredients = ingredientsText
+          .replace(/^"+|"+$/g, "")
+          .split(/,|;|•|\n/)
+          .map((i) => i.trim().toLowerCase())
+          .filter((i) => i.length > 2 && i.length < 50 && !i.match(/^\d+/) && !i.includes('www.') && !i.includes('http'));
+      }
+      // 4. If still empty, fallback to parseIngredients on all #content-details text
+      if (ingredients.length === 0 && descContainer) {
+        ingredients = this.parseIngredients(descContainer.textContent || "");
+      }
 
       // Shade information
       const activeShade = document.querySelector('.css-1n8i4of.selected')?.textContent?.trim() ||
@@ -71,7 +77,6 @@ class BeautyProductScraper {
         brand,
         ingredients,
         shade: activeShade,
-        price,
         category,
         skinType
       };
@@ -89,8 +94,6 @@ class BeautyProductScraper {
 
       const brand = document.querySelector('[data-test-id="brand-name"]')?.textContent?.trim() ||
         document.querySelector('.css-1hj8qbb')?.textContent?.trim() || '';
-
-      const price = document.querySelector('[data-test-id="product-price"]')?.textContent?.trim() || '';
 
       // Ingredients - Sephora usually has a dedicated ingredients section
       const ingredientsElement = document.querySelector('[data-test-id="ingredients"]') ||
@@ -111,7 +114,6 @@ class BeautyProductScraper {
         brand,
         ingredients,
         shade: selectedShade,
-        price,
         coverage,
         finish
       };
@@ -130,9 +132,6 @@ class BeautyProductScraper {
       const brand = document.querySelector('.po-brand .po-break-word')?.textContent?.trim() ||
         document.querySelector('[data-brand]')?.getAttribute('data-brand') ||
         this.extractBrandFromTitle(name);
-
-      const price = document.querySelector('.a-price-whole')?.textContent?.trim() ||
-        document.querySelector('.a-offscreen')?.textContent?.trim() || '';
 
       // Amazon ingredients are often in product details or description
       const featuresText = Array.from(document.querySelectorAll('#feature-bullets li span'))
@@ -154,7 +153,6 @@ class BeautyProductScraper {
         brand,
         ingredients,
         shade: selectedVariant,
-        price,
         category
       };
     } catch (error) {
@@ -166,44 +164,26 @@ class BeautyProductScraper {
   private parseIngredients(text: string): string[] {
     if (!text) return [];
 
-    // Common ingredient section identifiers
-    const ingredientMarkers = [
-      'ingredients:',
-      'key ingredients:',
-      'full ingredients:',
-      'ingredient list:',
-      'contains:'
-    ];
-
-    let ingredientText = text.toLowerCase();
-
-    // Find ingredient section
-    let foundMarker = false;
-    for (const marker of ingredientMarkers) {
-      const index = ingredientText.indexOf(marker);
-      if (index !== -1) {
-        ingredientText = ingredientText.substring(index + marker.length);
-        foundMarker = true;
-        break;
-      }
-    }
-
-    // If no marker found, but text looks like a list, use it as is
-    if (!foundMarker && (ingredientText.includes(',') || ingredientText.includes(';'))) {
-      // do nothing, use full text
-    }
-
-    // Split by common separators and clean up
-    const ingredients = ingredientText
-      .split(/[,;]/)
-      .map(ingredient => ingredient.trim())
-      .filter(ingredient =>
-        ingredient.length > 2 &&
+    // Clean up the text
+    let cleanText = text.replace(/^[^:]*:/, ''); // Remove everything before first colon
+    cleanText = cleanText.replace(/\([^)]*\)/g, ''); // Remove content in parentheses
+    cleanText = cleanText.replace(/\[[^\]]*\]/g, ''); // Remove content in brackets
+    
+    // Split by common separators
+    const ingredients = cleanText
+      .split(/[,;•\n]/)
+      .map(ingredient => ingredient.trim().toLowerCase())
+      .filter(ingredient => 
+        ingredient.length > 2 && 
         ingredient.length < 50 &&
         !ingredient.match(/^\d+/) && // Remove numbered items
-        !ingredient.includes('www.') // Remove URLs
+        !ingredient.includes('www.') && // Remove URLs
+        !ingredient.includes('http') &&
+        !ingredient.includes('may contain') // Remove allergen warnings
       )
-      .slice(0, 20); // Limit to first 20 ingredients
+      .map(ingredient => ingredient.replace(/^[\d\s]*\.?\s*/, '')) // Remove leading numbers/dots
+      .filter(ingredient => ingredient.length > 0)
+      .slice(0, 30); // Limit to first 30 ingredients
 
     return ingredients;
   }
