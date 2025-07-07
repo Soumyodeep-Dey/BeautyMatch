@@ -16,7 +16,8 @@ export default defineConfig({
         onboarding: 'onboarding.html',
         background: 'src/background/background.ts'
       }
-    }
+    },
+    sourcemap: true
   }
 })
 

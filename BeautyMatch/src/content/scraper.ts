@@ -24,8 +24,10 @@ class BeautyProductScraper {
   private scrapeNykaa(): ProductInfo | null {
     try {
       // Nykaa product page selectors
-      const name = document.querySelector('.css-1gc4zul')?.textContent?.trim() ||
-        document.querySelector('h1[data-testid="pdp_product_name"]')?.textContent?.trim() || '';
+      const name = document.querySelector('.css-1gc4x7i')?.textContent?.trim() ||
+        document.querySelector('h1[data-testid="pdp_product_name"]')?.textContent?.trim() ||
+        document.querySelector('h1')?.textContent?.trim() ||
+        '';
 
       const brand = document.querySelector('.css-1y64oha')?.textContent?.trim() ||
         document.querySelector('[data-testid="pdp_product_brand"]')?.textContent?.trim() || '';
