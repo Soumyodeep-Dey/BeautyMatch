@@ -7,6 +7,11 @@ export default function Onboarding() {
   const [skinType, setSkinType] = useState("")
   const [allergies, setAllergies] = useState("")
   const [concerns, setConcerns] = useState<string[]>([])
+  const [coverage, setCoverage] = useState("")
+  const [finish, setFinish] = useState("")
+  const [favoriteBrands, setFavoriteBrands] = useState("")
+  const [dislikedBrands, setDislikedBrands] = useState("")
+  const [formulations, setFormulations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const skinToneOptions = [
@@ -40,11 +45,38 @@ export default function Onboarding() {
     "Redness", "Dark Circles", "Uneven Texture", "Hyperpigmentation", "Sensitivity"
   ]
 
+  const coverageOptions = [
+    { value: "light", label: "Light" },
+    { value: "medium", label: "Medium" },
+    { value: "full", label: "Full" },
+    { value: "buildable", label: "Buildable" }
+  ]
+
+  const finishOptions = [
+    { value: "matte", label: "Matte" },
+    { value: "dewy", label: "Dewy" },
+    { value: "natural", label: "Natural" },
+    { value: "radiant", label: "Radiant" },
+    { value: "satin", label: "Satin" }
+  ]
+
+  const formulationOptions = [
+    "Liquid", "Powder", "Cream", "Gel", "Stick", "Balm", "Foam", "Serum", "Oil", "Lotion", "Spray", "Mousse", "Cushion", "Sheet", "Patch", "Bar", "Mist", "Paste", "Wax", "Emulsion", "Milk", "Ampoule", "Peel", "Mask", "Clay", "Jelly", "Water", "Drops", "Capsule", "Essence", "Ointment", "Fluid", "Compact", "Pencil", "Pen", "Roll-on", "Solid", "Suspension"
+  ]
+
   const toggleConcern = (concern: string) => {
     setConcerns(prev =>
       prev.includes(concern)
         ? prev.filter(c => c !== concern)
         : [...prev, concern]
+    )
+  }
+
+  const toggleFormulation = (formulation: string) => {
+    setFormulations(prev =>
+      prev.includes(formulation)
+        ? prev.filter(f => f !== formulation)
+        : [...prev, formulation]
     )
   }
 
@@ -55,7 +87,12 @@ export default function Onboarding() {
       skinTone: skinTone.trim(),
       skinType: skinType.trim().toLowerCase(),
       allergies: allergies.split(",").map(a => a.trim().toLowerCase()).filter(a => a.length > 0),
-      concerns: concerns
+      concerns: concerns,
+      preferredCoverage: coverage,
+      preferredFinish: finish,
+      favoriteBrands: favoriteBrands.split(",").map(b => b.trim()).filter(b => b.length > 0),
+      dislikedBrands: dislikedBrands.split(",").map(b => b.trim()).filter(b => b.length > 0),
+      formulationPreferences: formulations
     }
 
     try {
@@ -76,7 +113,7 @@ export default function Onboarding() {
       }
 
       // Show success message
-      setStep(4)
+      setStep(6)
     } catch (error) {
       console.error('Failed to save profile:', error)
       alert("Failed to save profile. Please try again.")
@@ -86,19 +123,19 @@ export default function Onboarding() {
   }
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1)
+    if (step < 6) setStep(step + 1)
   }
 
   const prevStep = () => {
     if (step > 1) setStep(step - 1)
   }
 
+  const totalSteps = 6
   const canProceed = () => {
     switch (step) {
       case 1: return skinTone !== ""
       case 2: return skinType !== ""
-      case 3: return true // Allergies are optional
-      default: return false
+      default: return true // All new fields are optional
     }
   }
 
@@ -116,7 +153,7 @@ export default function Onboarding() {
     }
   }
 
-  if (step === 4) {
+  if (step === 6) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
@@ -149,13 +186,13 @@ export default function Onboarding() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-500">Step {step} of 3</span>
-            <span className="text-sm text-gray-500">{Math.round((step / 3) * 100)}% complete</span>
+            <span className="text-sm text-gray-500">Step {step} of {totalSteps}</span>
+            <span className="text-sm text-gray-500">{Math.round((step / totalSteps) * 100)}% complete</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-pink-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(step / 3) * 100}%` }}
+              style={{ width: `${(step / totalSteps) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -265,6 +302,102 @@ export default function Onboarding() {
             </div>
           )}
 
+          {/* Step 4: Preferred Coverage & Finish (optional) */}
+          {step === 4 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Makeup Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+              {/* Coverage */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred coverage</label>
+                <div className="flex flex-wrap gap-2">
+                  {coverageOptions.map(opt => (
+                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="coverage"
+                        value={opt.value}
+                        checked={coverage === opt.value}
+                        onChange={() => setCoverage(opt.value)}
+                        className="accent-pink-500"
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {/* Finish */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred finish</label>
+                <div className="flex flex-wrap gap-2">
+                  {finishOptions.map(opt => (
+                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="finish"
+                        value={opt.value}
+                        checked={finish === opt.value}
+                        onChange={() => setFinish(opt.value)}
+                        className="accent-pink-500"
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Brand Preferences (optional) */}
+          {step === 5 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Brand Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Favorite brands</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Maybelline, L'Oreal, The Ordinary"
+                  value={favoriteBrands}
+                  onChange={e => setFavoriteBrands(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                />
+                <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brands to avoid</label>
+                <input
+                  type="text"
+                  placeholder="e.g., BrandX, BrandY"
+                  value={dislikedBrands}
+                  onChange={e => setDislikedBrands(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                />
+                <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Formulation Preferences (optional) */}
+          {step === 6 && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Formulation Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {formulationOptions.map(formulation => (
+                  <button
+                    key={formulation}
+                    type="button"
+                    onClick={() => toggleFormulation(formulation)}
+                    className={`p-2 text-sm border rounded-lg transition-all ${formulations.includes(formulation)
+                        ? 'border-pink-500 bg-pink-50 text-pink-700'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                  >
+                    {formulation}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex justify-between mt-8">
             <button
@@ -275,7 +408,7 @@ export default function Onboarding() {
               ← Back
             </button>
 
-            {step === 3 ? (
+            {step === totalSteps ? (
               <button
                 onClick={saveProfile}
                 disabled={isLoading}
