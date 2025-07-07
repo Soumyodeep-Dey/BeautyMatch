@@ -26,6 +26,8 @@ type Verdict =
   | "PERFECT_MATCH"
   | "EXCELLENT_MATCH"
   | "GOOD_MATCH"
+  | "PARTIAL_MATCH"
+  | "MATCH"
   | "FAIR_MATCH"
   | "CAUTION"
   | "NOT_RECOMMENDED"
@@ -33,7 +35,6 @@ type Verdict =
   | "MISSING_INFORMATION"
   | "USER_PREFERENCE_CONFLICT"
   | "NO_MATCH"
-  | "MATCH"
   | "UNKNOWN";
 
 type MatchResult = {
@@ -51,6 +52,14 @@ type MatchResult = {
     ratingScore: number;
     preferenceScore: number;
   };
+};
+
+// Minimal beneficials list for each skin type
+const BENEFICIALS = {
+  dry: ["hyaluronic acid", "glycerin", "ceramides", "squalane", "shea butter", "jojoba oil", "vitamin e", "niacinamide"],
+  oily: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay", "tea tree oil", "retinol"],
+  sensitive: ["aloe vera", "chamomile", "allantoin", "panthenol", "zinc oxide", "titanium dioxide"],
+  mature: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "niacinamide", "antioxidants"],
 };
 
 // Main matching logic
@@ -126,17 +135,71 @@ function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult
     };
   }
 
-  // 3. Skin type match
-  if (product.skinType && profile.skinType && product.skinType.some(s => s.includes(profile.skinType))) {
+  // 3. Skin type match logic + beneficials
+  let score = 0;
+  let reasons: string[] = [];
+  let foundBeneficials: string[] = [];
+  if (product.skinType && profile.skinType) {
+    // 100: exact match
+    if (product.skinType.some(s => s === profile.skinType)) {
+      score = 100;
+      reasons.push(`Perfect match for your skin type (${profile.skinType})`);
+    }
+    // 70: all skin types
+    else if (product.skinType.some(s => s.includes('all skin types'))) {
+      score = 70;
+      reasons.push('Suitable for all skin types');
+    }
+    // 50: partial/related match (e.g., "dry to normal" for "dry")
+    else if (product.skinType.some(s => s.includes(profile.skinType))) {
+      score = 50;
+      reasons.push(`Partial match for your skin type (${profile.skinType})`);
+    }
+  }
+
+  // Check for beneficial ingredients
+  const type = profile.skinType || "";
+  const beneficials = BENEFICIALS[type as keyof typeof BENEFICIALS] || [];
+  foundBeneficials = product.ingredients.filter((i: string) =>
+    beneficials.some((b: string) => i.toLowerCase().includes(b.toLowerCase()))
+  );
+  if (foundBeneficials.length > 0) {
+    score += 20;
+    reasons.push(`✨ Contains beneficial ingredients for ${type} skin: ${foundBeneficials.join(", ")}`);
+    // Cap at 100
+    if (score > 100) score = 100;
+    // If there was no skin type match, but beneficials found, set to PARTIAL_MATCH
+    if (score === 20) {
+      score = 50;
+      return {
+        verdict: "PARTIAL_MATCH",
+        score,
+        reasons,
+        warnings: [],
+        recommendations: [],
+        breakdown: {
+          skinTypeScore: 0,
+          ingredientScore: 50,
+          shadeScore: 0,
+          brandScore: 0,
+          priceScore: 0,
+          ratingScore: 0,
+          preferenceScore: 0
+        }
+      };
+    }
+  }
+
+  if (score > 0) {
     return {
-      verdict: "MATCH",
-      score: 100,
-      reasons: [`Matches your skin type (${profile.skinType})`],
+      verdict: score === 100 ? "MATCH" : score >= 90 ? "GOOD_MATCH" : score >= 50 ? "PARTIAL_MATCH" : "NO_MATCH",
+      score,
+      reasons,
       warnings: [],
       recommendations: [],
       breakdown: {
-        skinTypeScore: 100,
-        ingredientScore: 0,
+        skinTypeScore: score,
+        ingredientScore: foundBeneficials.length > 0 ? 20 : 0,
         shadeScore: 0,
         brandScore: 0,
         priceScore: 0,
@@ -184,6 +247,8 @@ function checkAllergies(ingredients: string[], allergies: string[]): { hasAllerg
 function getVerdictColor(verdict: string) {
   switch (verdict) {
     case 'MATCH': return 'text-green-700 bg-green-50';
+    case 'GOOD_MATCH': return 'text-blue-700 bg-blue-50';
+    case 'PARTIAL_MATCH': return 'text-yellow-700 bg-yellow-50';
     case 'CONTAINS_ALLERGEN': return 'text-red-800 bg-red-100';
     case 'USER_PREFERENCE_CONFLICT': return 'text-pink-700 bg-pink-100';
     case 'NO_MATCH': return 'text-gray-500 bg-gray-100';
@@ -194,6 +259,8 @@ function getVerdictColor(verdict: string) {
 function getVerdictEmoji(verdict: string) {
   switch (verdict) {
     case 'MATCH': return '✅';
+    case 'GOOD_MATCH': return '👍';
+    case 'PARTIAL_MATCH': return '👌';
     case 'CONTAINS_ALLERGEN': return '🚫';
     case 'USER_PREFERENCE_CONFLICT': return '🙅';
     case 'NO_MATCH': return '🤷';
@@ -203,7 +270,9 @@ function getVerdictEmoji(verdict: string) {
 
 function formatVerdict(verdict: string) {
   if (verdict === 'NO_MATCH') return 'No Match';
-  if (verdict === 'MATCH') return 'Match';
+  if (verdict === 'MATCH') return 'Perfect Match';
+  if (verdict === 'GOOD_MATCH') return 'Good Match';
+  if (verdict === 'PARTIAL_MATCH') return 'Partial Match';
   if (verdict === 'CONTAINS_ALLERGEN') return 'Contains Allergen';
   if (verdict === 'USER_PREFERENCE_CONFLICT') return 'Preference Conflict';
   return verdict
