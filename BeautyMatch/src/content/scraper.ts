@@ -174,20 +174,13 @@ class BeautyProductScraper {
         }
       }
 
-      // Parse ingredients from found text
-      if (ingredientsText) {
-        ingredients = this.parseIngredients(ingredientsText);
-      }
-
-      // --- Fallback: Extract ingredients from <b> tags for all shades ---
-      if (ingredients.length === 0) {
-        // Try to find a container with multiple <b> tags (shade names)
+      // 5. Fallback: Extract ingredients from <b> tags for all shades
+      if (!ingredientsText) {
         const mainContent = document.querySelector('[data-test-id="product-details"], .ProductDetails, .css-details, [data-test-id="product-description"], .ProductDescription, .css-description, [data-test-id="ingredients"], .css-pz80c5, [data-comp="Ingredients"], .Ingredients, body');
         if (mainContent) {
           const bolds = Array.from(mainContent.querySelectorAll('b'));
           let allIngredients: string[] = [];
           bolds.forEach(b => {
-            // Get the next sibling text node (ingredients string)
             let ingText = '';
             let node = b.nextSibling;
             while (node && node.nodeType !== Node.TEXT_NODE) {
@@ -196,7 +189,6 @@ class BeautyProductScraper {
             if (node && node.nodeType === Node.TEXT_NODE) {
               ingText = node.textContent?.trim() || '';
             }
-            // If not found, try the next <br> sibling's nextSibling
             if (!ingText) {
               let br = b.nextElementSibling;
               if (br && br.tagName === 'BR') {
@@ -207,7 +199,6 @@ class BeautyProductScraper {
               }
             }
             if (ingText) {
-              // Optionally, prepend the shade name: `${b.textContent}: ${ingText}`
               allIngredients = allIngredients.concat(this.parseIngredients(ingText));
             }
           });
@@ -216,6 +207,27 @@ class BeautyProductScraper {
           }
         }
       }
+
+      // 6. If still not found, look for paragraphs/divs containing 'ingredients'
+      if (ingredients.length === 0) {
+        const allTextNodes = Array.from(document.querySelectorAll('p, div'));
+        const ingNodes = allTextNodes.filter(el => el.textContent && el.textContent.toLowerCase().includes('ingredients'));
+        let foundIngredients: string[] = [];
+        ingNodes.forEach(node => {
+          foundIngredients = foundIngredients.concat(this.parseIngredients(node.textContent || ''));
+        });
+        if (foundIngredients.length > 0) {
+          ingredients = foundIngredients;
+        }
+      }
+
+      // 7. Parse ingredients from found text if not already set
+      if (ingredients.length === 0 && ingredientsText) {
+        ingredients = this.parseIngredients(ingredientsText);
+      }
+
+      // Deduplicate and normalize
+      ingredients = Array.from(new Set(ingredients.map(i => i.toLowerCase().trim())));
 
       // Shade/variant information - enhanced selectors
       const selectedShade = document.querySelector('[aria-pressed="true"]')?.textContent?.trim() ||
