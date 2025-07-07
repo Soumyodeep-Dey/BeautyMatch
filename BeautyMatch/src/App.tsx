@@ -209,33 +209,50 @@ function App() {
               </div>
             )}
             {/* Detailed Analysis */}
-            <div className="mt-4">
-              <h3 className="font-medium text-gray-800 mb-2">Detailed Analysis</h3>
-              <div className="text-xs text-gray-700 mb-1">
-                <strong>Beneficial Ingredients:</strong> {matchResult.detailedAnalysis?.beneficialIngredients?.join(', ') || 'None'}
+            <div className="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-pink-700 mb-3 text-base">Detailed Analysis</h3>
+              <div className="mb-2 flex flex-wrap items-center">
+                <span className="font-medium text-green-700 mr-2">Beneficial:</span>
+                {(matchResult.detailedAnalysis?.beneficialIngredients?.length > 0)
+                  ? matchResult.detailedAnalysis.beneficialIngredients.map((item, idx) => (
+                      <span key={idx} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
+                    ))
+                  : <span className="text-gray-500 text-xs">None</span>
+                }
               </div>
-              <div className="text-xs text-gray-700 mb-1">
-                <strong>Problematic Ingredients:</strong> {matchResult.detailedAnalysis?.problematicIngredients?.join(', ') || 'None'}
+              <div className="mb-2 flex flex-wrap items-center">
+                <span className="font-medium text-red-700 mr-2">Problematic:</span>
+                {(matchResult.detailedAnalysis?.problematicIngredients?.length > 0)
+                  ? matchResult.detailedAnalysis.problematicIngredients.map((item, idx) => (
+                      <span key={idx} className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
+                    ))
+                  : <span className="text-gray-500 text-xs">None</span>
+                }
               </div>
-              <div className="text-xs text-gray-700 mb-1">
-                <strong>Neutral Ingredients:</strong> {matchResult.detailedAnalysis?.neutralIngredients?.join(', ') || 'None'}
+              <div className="mb-2">
+                <span className="font-medium text-blue-700">Missing Beneficials:</span>
+                <span className="text-xs text-blue-800 ml-2">
+                  {matchResult.detailedAnalysis?.missingBeneficials?.join(', ') || 'None'}
+                </span>
               </div>
-              <div className="text-xs text-gray-700 mb-1">
-                <strong>Missing Beneficials:</strong> {matchResult.detailedAnalysis?.missingBeneficials?.join(', ') || 'None'}
-              </div>
-              <div className="text-xs text-gray-700 mb-1">
-                <strong>Compatibility Notes:</strong> {matchResult.detailedAnalysis?.compatibilityNotes?.join('; ') || 'None'}
+              <div>
+                <span className="font-medium text-purple-700">Compatibility Notes:</span>
+                <span className="text-xs text-purple-800 ml-2">
+                  {matchResult.detailedAnalysis?.compatibilityNotes?.join('; ') || 'None'}
+                </span>
               </div>
             </div>
-            {/* Breakdown */}
-            <div className="mt-4">
-              <h3 className="font-medium text-gray-800 mb-2">Score Breakdown</h3>
-              <div className="text-xs text-gray-700 mb-1">Skin Type: {matchResult.breakdown.skinTypeScore}</div>
-              <div className="text-xs text-gray-700 mb-1">Ingredients: {matchResult.breakdown.ingredientScore}</div>
-              <div className="text-xs text-gray-700 mb-1">Concerns: {matchResult.breakdown.concernsScore}</div>
-              <div className="text-xs text-gray-700 mb-1">Preferences: {matchResult.breakdown.preferenceScore}</div>
-              <div className="text-xs text-gray-700 mb-1">Brand: {matchResult.breakdown.brandScore}</div>
-              <div className="text-xs text-gray-700 mb-1">Safety: {matchResult.breakdown.safetyScore}</div>
+            {/* Score Breakdown */}
+            <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-pink-700 mb-3 text-base">Score Breakdown</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="font-medium text-gray-700">Skin Type:</span> <span className="text-gray-800">{matchResult.breakdown.skinTypeScore}</span></div>
+                <div><span className="font-medium text-gray-700">Ingredients:</span> <span className="text-gray-800">{matchResult.breakdown.ingredientScore}</span></div>
+                <div><span className="font-medium text-gray-700">Concerns:</span> <span className="text-gray-800">{matchResult.breakdown.concernsScore}</span></div>
+                <div><span className="font-medium text-gray-700">Preferences:</span> <span className="text-gray-800">{matchResult.breakdown.preferenceScore}</span></div>
+                <div><span className="font-medium text-gray-700">Brand:</span> <span className="text-gray-800">{matchResult.breakdown.brandScore}</span></div>
+                <div><span className="font-medium text-gray-700">Safety:</span> <span className="text-gray-800">{matchResult.breakdown.safetyScore}</span></div>
+              </div>
             </div>
           </div>
         )}
