@@ -1,35 +1,289 @@
 // src/App.tsx
-import { useState, useEffect } from 'react'
-import { matchProductToProfile } from './utils/matchingLogic'
+import { useState, useEffect, StrictMode } from "react";
+import { createRoot } from "react-dom/client";
 
-interface SkinProfile {
-  skinTone: string;
-  skinType: string;
-  allergies: string[];
-}
-
-interface ProductInfo {
+type ProductInfo = {
   name: string;
   brand: string;
-  ingredients: string[];
-  shade?: string;
-  formulation?: string;
   price?: string;
-  category?: string;
-  skinType?: string[];
+  shade?: string;
   coverage?: string;
   finish?: string;
-}
+  category?: string;
+  skinType?: string[];
+  ingredients: string[];
+};
 
-interface MatchResult {
-  verdict: 'PERFECT_MATCH' | 'GOOD_MATCH' | 'CAUTION' | 'NOT_RECOMMENDED';
+type SkinProfile = {
+  skinType: string;
+  skinTone: string;
+  allergies: string[];
+};
+
+type Verdict = "PERFECT_MATCH" | "GOOD_MATCH" | "CAUTION" | "NOT_RECOMMENDED";
+
+type MatchResult = {
+  verdict: Verdict;
   score: number;
   reasons: string[];
   warnings: string[];
   recommendations: string[];
+};
+
+// Ingredient lists for different skin types and concerns
+const IRRITANTS = {
+  sensitive: [
+    "alcohol denat",
+    "denatured alcohol",
+    "fragrance",
+    "parfum",
+    "essential oils",
+    "menthol",
+    "eucalyptus",
+    "citrus acids",
+    "alpha hydroxy acid",
+    "salicylic acid",
+  ],
+  dry: ["alcohol denat", "denatured alcohol", "witch hazel", "menthol", "eucalyptus"],
+  oily: ["coconut oil", "palm oil", "isopropyl myristate", "oleic acid"],
+  "acne-prone": [
+    "coconut oil",
+    "cocoa butter",
+    "palm oil",
+    "isopropyl myristate",
+    "sodium lauryl sulfate",
+    "oleic acid",
+  ],
+};
+
+const BENEFICIALS = {
+  dry: ["hyaluronic acid", "glycerin", "ceramides", "squalane", "shea butter", "jojoba oil", "vitamin e", "niacinamide"],
+  oily: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay", "tea tree oil", "retinol"],
+  sensitive: ["aloe vera", "chamomile", "allantoin", "panthenol", "zinc oxide", "titanium dioxide"],
+  mature: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "niacinamide", "antioxidants"],
+};
+
+const SHADE_MATCH = {
+  fair: ["fair", "light", "porcelain", "ivory", "vanilla", "pearl"],
+  light: ["light", "beige", "sand", "honey", "golden"],
+  medium: ["medium", "tan", "caramel", "amber", "bronze"],
+  dark: ["dark", "deep", "espresso", "cocoa", "mahogany"],
+  neutral: ["neutral", "natural", "true"],
+  warm: ["warm", "golden", "yellow", "peachy", "honey"],
+  cool: ["cool", "pink", "rose", "berry", "rosy"],
+};
+
+// Main matching logic
+function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult {
+  let score = 70;
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+  const recommendations: string[] = [];
+
+  // Allergy check
+  const allergyResult = checkAllergies(product.ingredients, profile.allergies);
+  if (allergyResult.hasAllergies) {
+    score -= 50;
+    warnings.push(...allergyResult.warnings);
+  }
+
+  // Skin type logic
+  const skinTypeResult = checkSkinType(product, profile.skinType);
+  score += skinTypeResult.scoreAdjustment;
+  reasons.push(...skinTypeResult.reasons);
+  warnings.push(...skinTypeResult.warnings);
+
+  // Shade match
+  if (isMakeup(product) && product.shade && profile.skinTone) {
+    const shadeResult = checkShade(product.shade, profile.skinTone);
+    score += shadeResult.scoreAdjustment;
+    reasons.push(...shadeResult.reasons);
+    if (shadeResult.warning) warnings.push(shadeResult.warning);
+  }
+
+  // High-quality ingredients
+  const qualityResult = checkQualityIngredients(product.ingredients);
+  score += qualityResult.scoreAdjustment;
+  reasons.push(...qualityResult.reasons);
+  recommendations.push(...qualityResult.recommendations);
+
+  // Category-specific logic
+  const categoryResult = checkCategory(product, profile);
+  score += categoryResult.scoreAdjustment;
+  reasons.push(...categoryResult.reasons);
+
+  // Final verdict
+  return {
+    verdict: getVerdict(score, warnings.length) as Verdict,
+    score: Math.max(0, Math.min(100, score)),
+    reasons: reasons.filter(Boolean),
+    warnings: warnings.filter(Boolean),
+    recommendations: recommendations.filter(Boolean),
+  };
 }
 
-export default function App() {
+function checkAllergies(ingredients: string[], allergies: string[]): { hasAllergies: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+  let hasAllergies = false;
+  for (const allergy of allergies) {
+    const allergyLower = allergy.toLowerCase().trim();
+    for (const ingredient of ingredients) {
+      if (ingredient.toLowerCase().includes(allergyLower)) {
+        hasAllergies = true;
+        warnings.push(`⚠️ Contains ${ingredient} (matches your allergy: ${allergy})`);
+      }
+    }
+  }
+  return { hasAllergies, warnings };
+}
+
+function checkSkinType(product: ProductInfo, skinType: string): { scoreAdjustment: number; reasons: string[]; warnings: string[] } {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+  let scoreAdjustment = 0;
+  const type = skinType.toLowerCase();
+  if (
+    product.skinType &&
+    product.skinType.length > 0 &&
+    product.skinType.some(
+      (t: string) => t.toLowerCase().includes(type) || t.toLowerCase().includes("all skin types")
+    )
+  ) {
+    scoreAdjustment += 10;
+    reasons.push(`✅ Specifically formulated for ${type} skin`);
+  }
+  // Irritants
+  const irritants = IRRITANTS[type as keyof typeof IRRITANTS] || [];
+  const foundIrritants = product.ingredients.filter((i: string) =>
+    irritants.some((ir: string) => i.toLowerCase().includes(ir.toLowerCase()))
+  );
+  if (foundIrritants.length > 0) {
+    scoreAdjustment -= foundIrritants.length * 5;
+    warnings.push(
+      `⚠️ Contains ingredients that may not suit ${type} skin: ${foundIrritants.join(", ")}`
+    );
+  }
+  // Beneficials
+  const beneficials = BENEFICIALS[type as keyof typeof BENEFICIALS] || [];
+  const foundBeneficials = product.ingredients.filter((i: string) =>
+    beneficials.some((b: string) => i.toLowerCase().includes(b.toLowerCase()))
+  );
+  if (foundBeneficials.length > 0) {
+    scoreAdjustment += foundBeneficials.length * 3;
+    reasons.push(
+      `✨ Contains beneficial ingredients for ${type} skin: ${foundBeneficials.join(", ")}`
+    );
+  }
+  return { scoreAdjustment, reasons, warnings };
+}
+
+function checkShade(shade: string, skinTone: string): { scoreAdjustment: number; reasons: string[]; warning?: string } {
+  const reasons: string[] = [];
+  let scoreAdjustment = 0;
+  const shadeLower = shade.toLowerCase();
+  const toneLower = skinTone.toLowerCase();
+  const userTones = Object.keys(SHADE_MATCH).filter((k) =>
+    SHADE_MATCH[k as keyof typeof SHADE_MATCH].some((t) => toneLower.includes(t))
+  );
+  const shadeTones = Object.keys(SHADE_MATCH).filter((k) =>
+    SHADE_MATCH[k as keyof typeof SHADE_MATCH].some((t) => shadeLower.includes(t))
+  );
+  if (userTones.filter((t) => shadeTones.includes(t)).length > 0) {
+    scoreAdjustment += 15;
+    reasons.push(`🎨 Shade "${shade}" matches your ${skinTone} skin tone`);
+    return { scoreAdjustment, reasons };
+  } else {
+    return {
+      scoreAdjustment: -10,
+      reasons,
+      warning: `🎨 Shade "${shade}" might not match your ${skinTone} skin tone`,
+    };
+  }
+}
+
+function checkQualityIngredients(ingredients: string[]): { scoreAdjustment: number; reasons: string[]; recommendations: string[] } {
+  const reasons: string[] = [];
+  const recommendations: string[] = [];
+  let scoreAdjustment = 0;
+  const highQuality = [
+    "hyaluronic acid",
+    "retinol",
+    "peptides",
+    "vitamin c",
+    "niacinamide",
+    "ceramides",
+    "squalane",
+    "bakuchiol",
+  ];
+  const found = ingredients.filter((i: string) =>
+    highQuality.some((h: string) => i.toLowerCase().includes(h.toLowerCase()))
+  );
+  if (found.length > 0) {
+    scoreAdjustment += found.length * 2;
+    reasons.push(`💎 Contains high-quality ingredients: ${found.join(", ")}`);
+  }
+  if (ingredients.length > 30) {
+    recommendations.push("💡 This product has many ingredients - consider patch testing first");
+  }
+  return { scoreAdjustment, reasons, recommendations };
+}
+
+function checkCategory(product: ProductInfo, profile: SkinProfile): { scoreAdjustment: number; reasons: string[] } {
+  const reasons: string[] = [];
+  let scoreAdjustment = 0;
+  const category = product.category?.toLowerCase() || "";
+  const skinType = profile.skinType.toLowerCase();
+  if (category.includes("foundation") || category.includes("concealer")) {
+    if (product.coverage) {
+      if (skinType.includes("oily") && product.coverage.includes("full")) {
+        scoreAdjustment += 5;
+        reasons.push("💄 Full coverage is great for oily skin");
+      }
+      if (skinType.includes("dry") && product.coverage.includes("light")) {
+        scoreAdjustment += 5;
+        reasons.push("💄 Light coverage works well with dry skin");
+      }
+    }
+    if (product.finish) {
+      if (skinType.includes("oily") && product.finish.includes("matte")) {
+        scoreAdjustment += 8;
+        reasons.push("💄 Matte finish is perfect for oily skin");
+      }
+      if (skinType.includes("dry") && product.finish.includes("dewy")) {
+        scoreAdjustment += 8;
+        reasons.push("💄 Dewy finish is ideal for dry skin");
+      }
+    }
+  }
+  return { scoreAdjustment, reasons };
+}
+
+function isMakeup(product: ProductInfo): boolean {
+  const makeupCategories = [
+    "foundation",
+    "concealer",
+    "lipstick",
+    "eyeshadow",
+    "blush",
+    "bronzer",
+    "highlighter",
+    "lip gloss",
+    "tinted moisturizer",
+  ];
+  const category = product.category?.toLowerCase() || "";
+  const name = product.name.toLowerCase();
+  return makeupCategories.some((c) => category.includes(c) || name.includes(c));
+}
+
+function getVerdict(score: number, warningCount: number): Verdict {
+  if (warningCount > 2 || score < 40) return "NOT_RECOMMENDED";
+  if (warningCount > 0 || score < 60) return "CAUTION";
+  if (score >= 85) return "PERFECT_MATCH";
+  return "GOOD_MATCH";
+}
+
+// Main Popup Component
+function App() {
   const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null)
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null)
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null)
@@ -64,7 +318,7 @@ export default function App() {
         setProductInfo(response.data)
 
         if (skinProfile) {
-          const result = matchProductToProfile(response.data, skinProfile)
+          const result = analyzeProduct(response.data, skinProfile)
           setMatchResult(result)
         }
       } else {
@@ -263,4 +517,15 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+export default App;
+
+const rootEl = document.getElementById("root");
+if (rootEl) {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
 }
