@@ -62,6 +62,26 @@ const BENEFICIALS = {
   mature: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "niacinamide", "antioxidants"],
 };
 
+// Helper to normalize skin type for beneficials lookup
+function normalizeSkinTypeKey(skinType: string): string {
+  const map: Record<string, string> = {
+    'oily skin': 'oily',
+    'dry skin': 'dry',
+    'sensitive skin': 'sensitive',
+    'mature skin': 'mature',
+    'combination skin': 'combination',
+    'normal skin': 'normal',
+    'acne-prone': 'acne-prone',
+    'oily': 'oily',
+    'dry': 'dry',
+    'sensitive': 'sensitive',
+    'mature': 'mature',
+    'combination': 'combination',
+    'normal': 'normal',
+  };
+  return map[skinType.toLowerCase().trim()] || skinType.toLowerCase().trim();
+}
+
 // Main matching logic
 function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult {
   // Normalize product.skinType to array
@@ -139,55 +159,65 @@ function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult
   let score = 0;
   let reasons: string[] = [];
   let foundBeneficials: string[] = [];
+  let skinTypeMatched = false;
+  let allSkinTypesMatched = false;
+  let partialSkinTypeMatched = false;
   if (product.skinType && profile.skinType) {
     // 100: exact match
     if (product.skinType.some(s => s === profile.skinType)) {
       score = 100;
+      skinTypeMatched = true;
       reasons.push(`Perfect match for your skin type (${profile.skinType})`);
     }
     // 70: all skin types
     else if (product.skinType.some(s => s.includes('all skin types'))) {
       score = 70;
+      allSkinTypesMatched = true;
       reasons.push('Suitable for all skin types');
     }
     // 50: partial/related match (e.g., "dry to normal" for "dry")
     else if (product.skinType.some(s => s.includes(profile.skinType))) {
       score = 50;
+      partialSkinTypeMatched = true;
       reasons.push(`Partial match for your skin type (${profile.skinType})`);
     }
   }
 
   // Check for beneficial ingredients
-  const type = profile.skinType || "";
+  const type = profile.skinType ? normalizeSkinTypeKey(profile.skinType) : "";
   const beneficials = BENEFICIALS[type as keyof typeof BENEFICIALS] || [];
   foundBeneficials = product.ingredients.filter((i: string) =>
     beneficials.some((b: string) => i.toLowerCase().includes(b.toLowerCase()))
   );
   if (foundBeneficials.length > 0) {
-    score += 20;
     reasons.push(`✨ Contains beneficial ingredients for ${type} skin: ${foundBeneficials.join(", ")}`);
+    if (skinTypeMatched) {
+      score = 100;
+    } else if (allSkinTypesMatched) {
+      score = 90;
+    } else if (partialSkinTypeMatched) {
+      score = 70;
+    } else {
+      score = 50;
+    }
     // Cap at 100
     if (score > 100) score = 100;
-    // If there was no skin type match, but beneficials found, set to PARTIAL_MATCH
-    if (score === 20) {
-      score = 50;
-      return {
-        verdict: "PARTIAL_MATCH",
-        score,
-        reasons,
-        warnings: [],
-        recommendations: [],
-        breakdown: {
-          skinTypeScore: 0,
-          ingredientScore: 50,
-          shadeScore: 0,
-          brandScore: 0,
-          priceScore: 0,
-          ratingScore: 0,
-          preferenceScore: 0
-        }
-      };
-    }
+    return {
+      verdict: score === 100 ? "MATCH" : score >= 90 ? "GOOD_MATCH" : score >= 50 ? "PARTIAL_MATCH" : "NO_MATCH",
+      score,
+      reasons,
+      warnings: [],
+      recommendations: [],
+      breakdown: {
+        skinTypeScore: skinTypeMatched ? 100 : partialSkinTypeMatched ? 50 : allSkinTypesMatched ? 70 : 0,
+        ingredientScore: 20,
+        shadeScore: 0,
+        brandScore: 0,
+        priceScore: 0,
+        ratingScore: 0,
+        preferenceScore: 0
+      }
+    };
   }
 
   if (score > 0) {
@@ -198,8 +228,8 @@ function analyzeProduct(product: ProductInfo, profile: SkinProfile): MatchResult
       warnings: [],
       recommendations: [],
       breakdown: {
-        skinTypeScore: score,
-        ingredientScore: foundBeneficials.length > 0 ? 20 : 0,
+        skinTypeScore: skinTypeMatched ? 100 : partialSkinTypeMatched ? 50 : allSkinTypesMatched ? 70 : 0,
+        ingredientScore: 0,
         shadeScore: 0,
         brandScore: 0,
         priceScore: 0,
@@ -279,6 +309,29 @@ function formatVerdict(verdict: string) {
     .replace(/_/g, ' ')
     .toLowerCase()
     .replace(/\b\w/g, l => l.toUpperCase());
+}
+
+// Suggestion generator based on skin type
+function getProfileSuggestion(profile: SkinProfile): string {
+  const type = profile.skinType?.toLowerCase() || "";
+  switch (type) {
+    case "oily":
+      return "Look for lightweight, oil-free, and non-comedogenic products with niacinamide or salicylic acid.";
+    case "dry":
+      return "Choose hydrating products with hyaluronic acid, glycerin, or ceramides.";
+    case "sensitive":
+      return "Opt for fragrance-free, gentle products with soothing ingredients like aloe vera or chamomile.";
+    case "mature":
+      return "Seek products with retinol, peptides, or antioxidants to support mature skin.";
+    case "combination":
+      return "Use balanced formulas that hydrate dry areas and control oil in the T-zone.";
+    case "acne-prone":
+      return "Pick non-comedogenic products with salicylic acid or tea tree oil to help prevent breakouts.";
+    case "normal":
+      return "Maintain your skin with gentle, balanced products and regular hydration.";
+    default:
+      return "Choose products that match your skin's unique needs and avoid known irritants.";
+  }
 }
 
 // Main Popup Component
@@ -381,6 +434,9 @@ function App() {
             {skinProfile.allergies.length > 0 && (
               <div><strong>Allergies:</strong> {skinProfile.allergies.join(', ')}</div>
             )}
+          </div>
+          <div className="mt-2 text-xs text-blue-700 font-medium">
+            {getProfileSuggestion(skinProfile)}
           </div>
         </div>
 
