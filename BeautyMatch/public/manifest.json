@@ -12,7 +12,8 @@
     "https://*.nykaa.com/*",
     "https://*.sephora.com/*",
     "https://*.amazon.in/*",
-    "https://*.amazon.com/*"
+    "https://*.amazon.com/*",
+    "https://*.sephora.in/*"
   ],
   "background": {
     "service_worker": "src/background/background.js",
@@ -24,7 +25,8 @@
         "https://*.nykaa.com/*",
         "https://*.sephora.com/*",
         "https://*.amazon.in/*",
-        "https://*.amazon.com/*"
+        "https://*.amazon.com/*",
+        "https://*.sephora.in/*"
       ],
       "js": [
         "src/content/scraper.js"
