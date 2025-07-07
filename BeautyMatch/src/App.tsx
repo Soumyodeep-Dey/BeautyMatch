@@ -20,7 +20,17 @@ type SkinProfile = {
   allergies: string[];
 };
 
-type Verdict = "PERFECT_MATCH" | "GOOD_MATCH" | "CAUTION" | "NOT_RECOMMENDED";
+type Verdict =
+  | "PERFECT_MATCH"
+  | "EXCELLENT_MATCH"
+  | "GOOD_MATCH"
+  | "FAIR_MATCH"
+  | "CAUTION"
+  | "NOT_RECOMMENDED"
+  | "CONTAINS_ALLERGEN"
+  | "MISSING_INFORMATION"
+  | "USER_PREFERENCE_CONFLICT"
+  | "UNKNOWN";
 
 type MatchResult = {
   verdict: Verdict;
@@ -275,11 +285,54 @@ function isMakeup(product: ProductInfo): boolean {
   return makeupCategories.some((c) => category.includes(c) || name.includes(c));
 }
 
-function getVerdict(score: number, warningCount: number): Verdict {
+function getVerdict(score: number, warningCount: number, context?: { hasAllergen?: boolean; missingInfo?: boolean; userPrefConflict?: boolean }): Verdict {
+  if (context?.missingInfo) return "MISSING_INFORMATION";
+  if (context?.hasAllergen) return "CONTAINS_ALLERGEN";
+  if (context?.userPrefConflict) return "USER_PREFERENCE_CONFLICT";
+  if (score >= 95) return "PERFECT_MATCH";
+  if (score >= 85) return "EXCELLENT_MATCH";
+  if (score >= 70) return "GOOD_MATCH";
+  if (score >= 55) return "FAIR_MATCH";
   if (warningCount > 2 || score < 40) return "NOT_RECOMMENDED";
   if (warningCount > 0 || score < 60) return "CAUTION";
-  if (score >= 85) return "PERFECT_MATCH";
-  return "GOOD_MATCH";
+  return "UNKNOWN";
+}
+
+function getVerdictColor(verdict: string) {
+  switch (verdict) {
+    case 'PERFECT_MATCH': return 'text-green-700 bg-green-50';
+    case 'EXCELLENT_MATCH': return 'text-emerald-700 bg-emerald-50';
+    case 'GOOD_MATCH': return 'text-blue-700 bg-blue-50';
+    case 'FAIR_MATCH': return 'text-yellow-700 bg-yellow-50';
+    case 'CAUTION': return 'text-orange-700 bg-orange-50';
+    case 'NOT_RECOMMENDED': return 'text-red-700 bg-red-50';
+    case 'CONTAINS_ALLERGEN': return 'text-red-800 bg-red-100';
+    case 'MISSING_INFORMATION': return 'text-gray-700 bg-gray-100';
+    case 'USER_PREFERENCE_CONFLICT': return 'text-pink-700 bg-pink-100';
+    default: return 'text-gray-600 bg-gray-50';
+  }
+}
+
+function getVerdictEmoji(verdict: string) {
+  switch (verdict) {
+    case 'PERFECT_MATCH': return '🌟';
+    case 'EXCELLENT_MATCH': return '✨';
+    case 'GOOD_MATCH': return '👍';
+    case 'FAIR_MATCH': return '👌';
+    case 'CAUTION': return '⚠️';
+    case 'NOT_RECOMMENDED': return '❌';
+    case 'CONTAINS_ALLERGEN': return '🚫';
+    case 'MISSING_INFORMATION': return '❓';
+    case 'USER_PREFERENCE_CONFLICT': return '🙅';
+    default: return '🤔';
+  }
+}
+
+function formatVerdict(verdict: string) {
+  return verdict
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, l => l.toUpperCase());
 }
 
 // Main Popup Component
@@ -334,30 +387,6 @@ function App() {
 
   const openOnboarding = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') })
-  }
-
-  const getVerdictColor = (verdict: string) => {
-    switch (verdict) {
-      case 'PERFECT_MATCH': return 'text-green-600 bg-green-50'
-      case 'GOOD_MATCH': return 'text-blue-600 bg-blue-50'
-      case 'CAUTION': return 'text-yellow-600 bg-yellow-50'
-      case 'NOT_RECOMMENDED': return 'text-red-600 bg-red-50'
-      default: return 'text-gray-600 bg-gray-50'
-    }
-  }
-
-  const getVerdictEmoji = (verdict: string) => {
-    switch (verdict) {
-      case 'PERFECT_MATCH': return '✨'
-      case 'GOOD_MATCH': return '👍'
-      case 'CAUTION': return '⚠️'
-      case 'NOT_RECOMMENDED': return '❌'
-      default: return '🤔'
-    }
-  }
-
-  const formatVerdict = (verdict: string) => {
-    return verdict.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
   }
 
   // Show onboarding screen if no profile exists
@@ -460,7 +489,22 @@ function App() {
                 <div className="text-sm font-medium">{matchResult.score}/100</div>
               </div>
             </div>
-
+            {/* Special verdict messages */}
+            {matchResult.verdict === 'MISSING_INFORMATION' && (
+              <div className="mb-3 text-sm text-gray-700">
+                Not enough information to make a confident recommendation. Please provide more details in your profile or ensure the product page is complete.
+              </div>
+            )}
+            {matchResult.verdict === 'USER_PREFERENCE_CONFLICT' && (
+              <div className="mb-3 text-sm text-pink-700">
+                This product conflicts with your stated preferences (e.g., disliked brand or formulation).
+              </div>
+            )}
+            {matchResult.verdict === 'CONTAINS_ALLERGEN' && (
+              <div className="mb-3 text-sm text-red-700">
+                This product contains an ingredient you want to avoid or are allergic to.
+              </div>
+            )}
             {/* Reasons */}
             {matchResult.reasons.length > 0 && (
               <div className="mb-3">
@@ -475,7 +519,6 @@ function App() {
                 </div>
               </div>
             )}
-
             {/* Warnings */}
             {matchResult.warnings.length > 0 && (
               <div className="mb-3">
@@ -490,7 +533,6 @@ function App() {
                 </div>
               </div>
             )}
-
             {/* Recommendations */}
             {matchResult.recommendations.length > 0 && (
               <div>
