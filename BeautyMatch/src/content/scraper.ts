@@ -88,39 +88,186 @@ class BeautyProductScraper {
 
   private scrapeSephora(): ProductInfo | null {
     try {
-      // Sephora product page selectors
+      // Sephora product page selectors - multiple fallbacks for different page layouts
       const name = document.querySelector('[data-test-id="product-name"]')?.textContent?.trim() ||
-        document.querySelector('.css-0')?.textContent?.trim() || '';
+        document.querySelector('h1[data-test-id="product-name"]')?.textContent?.trim() ||
+        document.querySelector('.css-0')?.textContent?.trim() ||
+        document.querySelector('h1.css-0')?.textContent?.trim() ||
+        document.querySelector('.ProductDisplayName')?.textContent?.trim() ||
+        document.querySelector('h1')?.textContent?.trim() || '';
 
       const brand = document.querySelector('[data-test-id="brand-name"]')?.textContent?.trim() ||
-        document.querySelector('.css-1hj8qbb')?.textContent?.trim() || '';
+        document.querySelector('a[data-test-id="brand-name"]')?.textContent?.trim() ||
+        document.querySelector('.css-1hj8qbb')?.textContent?.trim() ||
+        document.querySelector('.ProductBrand')?.textContent?.trim() ||
+        this.extractBrandFromTitle(name);
 
-      // Ingredients - Sephora usually has a dedicated ingredients section
+      // --- Robust Ingredients Extraction for Sephora ---
+      let ingredients: string[] = [];
+      let ingredientsText = "";
+
+      // 1. Try dedicated ingredients section
       const ingredientsElement = document.querySelector('[data-test-id="ingredients"]') ||
-        document.querySelector('.css-pz80c5');
-      const ingredientsText = ingredientsElement?.textContent || '';
-      const ingredients = this.parseIngredients(ingredientsText);
+        document.querySelector('.css-pz80c5') ||
+        document.querySelector('[data-comp="Ingredients"]') ||
+        document.querySelector('.Ingredients');
+      
+      if (ingredientsElement) {
+        ingredientsText = ingredientsElement.textContent || '';
+      }
 
-      // Shade/variant information
+      // 2. Look for ingredients in product details section
+      if (!ingredientsText) {
+        const detailsSection = document.querySelector('[data-test-id="product-details"]') ||
+          document.querySelector('.ProductDetails') ||
+          document.querySelector('.css-details');
+        
+        if (detailsSection) {
+          const ingredientsParagraph = Array.from(detailsSection.querySelectorAll('p, div')).find(el => 
+            el.textContent?.toLowerCase().includes('ingredients:') || 
+            el.textContent?.toLowerCase().includes('ingredient list')
+          );
+          if (ingredientsParagraph) {
+            ingredientsText = ingredientsParagraph.textContent || '';
+          }
+        }
+      }
+
+      // 3. Look for ingredients in accordion/expandable sections
+      if (!ingredientsText) {
+        const accordionButtons = Array.from(document.querySelectorAll('button, [role="button"]'));
+        const ingredientsButton = accordionButtons.find(btn => 
+          btn.textContent?.toLowerCase().includes('ingredients') ||
+          btn.textContent?.toLowerCase().includes('formula')
+        );
+        
+        if (ingredientsButton) {
+          // Try to find the associated content
+          const buttonId = ingredientsButton.getAttribute('aria-controls');
+          if (buttonId) {
+            const contentElement = document.getElementById(buttonId);
+            if (contentElement) {
+              ingredientsText = contentElement.textContent || '';
+            }
+          } else {
+            // Look for sibling or next element
+            const nextElement = ingredientsButton.nextElementSibling ||
+              ingredientsButton.parentElement?.nextElementSibling;
+            if (nextElement) {
+              ingredientsText = nextElement.textContent || '';
+            }
+          }
+        }
+      }
+
+      // 4. Look in product description as fallback
+      if (!ingredientsText) {
+        const description = document.querySelector('[data-test-id="product-description"]') ||
+          document.querySelector('.ProductDescription') ||
+          document.querySelector('.css-description');
+        
+        if (description) {
+          const descText = description.textContent || '';
+          if (descText.toLowerCase().includes('ingredients')) {
+            ingredientsText = descText;
+          }
+        }
+      }
+
+      // Parse ingredients from found text
+      if (ingredientsText) {
+        ingredients = this.parseIngredients(ingredientsText);
+      }
+
+      // --- Fallback: Extract ingredients from <b> tags for all shades ---
+      if (ingredients.length === 0) {
+        // Try to find a container with multiple <b> tags (shade names)
+        const mainContent = document.querySelector('[data-test-id="product-details"], .ProductDetails, .css-details, [data-test-id="product-description"], .ProductDescription, .css-description, [data-test-id="ingredients"], .css-pz80c5, [data-comp="Ingredients"], .Ingredients, body');
+        if (mainContent) {
+          const bolds = Array.from(mainContent.querySelectorAll('b'));
+          let allIngredients: string[] = [];
+          bolds.forEach(b => {
+            // Get the next sibling text node (ingredients string)
+            let ingText = '';
+            let node = b.nextSibling;
+            while (node && node.nodeType !== Node.TEXT_NODE) {
+              node = node.nextSibling;
+            }
+            if (node && node.nodeType === Node.TEXT_NODE) {
+              ingText = node.textContent?.trim() || '';
+            }
+            // If not found, try the next <br> sibling's nextSibling
+            if (!ingText) {
+              let br = b.nextElementSibling;
+              if (br && br.tagName === 'BR') {
+                let next = br.nextSibling;
+                if (next && next.nodeType === Node.TEXT_NODE) {
+                  ingText = next.textContent?.trim() || '';
+                }
+              }
+            }
+            if (ingText) {
+              // Optionally, prepend the shade name: `${b.textContent}: ${ingText}`
+              allIngredients = allIngredients.concat(this.parseIngredients(ingText));
+            }
+          });
+          if (allIngredients.length > 0) {
+            ingredients = allIngredients;
+          }
+        }
+      }
+
+      // Shade/variant information - enhanced selectors
       const selectedShade = document.querySelector('[aria-pressed="true"]')?.textContent?.trim() ||
-        document.querySelector('.css-1qe8tjm[aria-selected="true"]')?.textContent?.trim() || '';
+        document.querySelector('.css-1qe8tjm[aria-selected="true"]')?.textContent?.trim() ||
+        document.querySelector('[data-test-id="variant-option"][aria-selected="true"]')?.textContent?.trim() ||
+        document.querySelector('.VariantOption[aria-selected="true"]')?.textContent?.trim() ||
+        document.querySelector('.selected-shade')?.textContent?.trim() ||
+        document.querySelector('.sku-selected')?.getAttribute('data-shade') || '';
+
+      // Product category from breadcrumbs
+      const category = document.querySelector('[data-test-id="breadcrumb"]')?.textContent?.toLowerCase() ||
+        document.querySelector('.Breadcrumb')?.textContent?.toLowerCase() ||
+        document.querySelector('.breadcrumb')?.textContent?.toLowerCase() || '';
 
       // Coverage and finish for makeup products
       const coverage = this.extractCoverage(document.body.textContent || '');
       const finish = this.extractFinish(document.body.textContent || '');
+
+      // Skin type information
+      const skinType = this.extractSkinType(document.body.textContent || '');
+
+      // Formulation type (liquid, powder, cream, etc.)
+      const formulation = this.extractFormulation(document.body.textContent || '');
 
       return {
         name,
         brand,
         ingredients,
         shade: selectedShade,
+        category,
+        skinType,
         coverage,
-        finish
+        finish,
+        formulation
       };
     } catch (error) {
       console.error('Sephora scraping error:', error);
       return null;
     }
+  }
+
+  private extractFormulation(text: string): string {
+    const lowerText = text.toLowerCase();
+    const formulationTypes = [
+      'liquid', 'powder', 'cream', 'gel', 'stick', 'balm', 'foam', 'serum', 'oil', 'lotion', 'spray', 'mousse', 'cushion', 'sheet', 'patch', 'bar', 'mist', 'paste', 'wax', 'emulsion', 'milk', 'ampoule', 'peel', 'mask', 'clay', 'jelly', 'water', 'drops', 'capsule', 'essence', 'ointment', 'fluid', 'compact', 'pencil', 'pen', 'roll-on', 'roll on', 'solid', 'suspension', 'powder-to-cream', 'powder to cream', 'powder-to-liquid', 'powder to liquid'
+    ];
+    for (const formulation of formulationTypes) {
+      if (lowerText.includes(formulation)) {
+        return formulation;
+      }
+    }
+    return '';
   }
 
   private scrapeAmazon(): ProductInfo | null {
