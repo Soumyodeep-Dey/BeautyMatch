@@ -1,5 +1,5 @@
 // src/pages/Onboarding.tsx
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Onboarding() {
   const [step, setStep] = useState(1)
@@ -13,6 +13,36 @@ export default function Onboarding() {
   const [dislikedBrands, setDislikedBrands] = useState("")
   const [formulations, setFormulations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  // Add useEffect to load profile on mount
+  useEffect(() => {
+    async function loadProfile() {
+      let profile = null;
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        profile = await new Promise(resolve => {
+          chrome.storage.sync.get(['skinProfile'], (result) => {
+            resolve(result.skinProfile || null);
+          });
+        });
+      } else {
+        // Fallback for local dev
+        const local = localStorage.getItem('skinProfile');
+        if (local) profile = JSON.parse(local);
+      }
+      if (profile) {
+        setSkinTone(profile.skinTone || "");
+        setSkinType(profile.skinType || "");
+        setAllergies((profile.allergies && profile.allergies.length > 0) ? profile.allergies.join(", ") : "");
+        setConcerns(profile.concerns || profile.skinConcerns || []);
+        setCoverage(profile.preferredCoverage || "");
+        setFinish(profile.preferredFinish || "");
+        setFavoriteBrands((profile.favoriteBrands && profile.favoriteBrands.length > 0) ? profile.favoriteBrands.join(", ") : "");
+        setDislikedBrands((profile.dislikedBrands && profile.dislikedBrands.length > 0) ? profile.dislikedBrands.join(", ") : "");
+        setFormulations(profile.formulationPreferences || []);
+      }
+    }
+    loadProfile();
+  }, []);
 
   const skinToneOptions = [
     { value: "fair cool", label: "Fair Cool", description: "Light with pink/blue undertones" },
@@ -88,6 +118,7 @@ export default function Onboarding() {
       skinType: skinType.trim().toLowerCase(),
       allergies: allergies.split(",").map(a => a.trim().toLowerCase()).filter(a => a.length > 0),
       concerns: concerns,
+      skinConcerns: concerns, // <-- add this line
       preferredCoverage: coverage,
       preferredFinish: finish,
       favoriteBrands: favoriteBrands.split(",").map(b => b.trim()).filter(b => b.length > 0),
