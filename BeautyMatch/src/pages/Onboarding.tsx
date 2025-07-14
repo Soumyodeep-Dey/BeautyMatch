@@ -156,7 +156,7 @@ export default function Onboarding() {
   if (step === 6) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center transition-all duration-200 hover:shadow-xl">
           <div className="text-6xl mb-4">✨</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Profile Created!</h1>
           <p className="text-gray-600 mb-6">
@@ -164,7 +164,8 @@ export default function Onboarding() {
           </p>
           <button
             onClick={handleComplete}
-            className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors"
+            className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+            aria-label="Start shopping with your new profile"
           >
             Start Shopping
           </button>
@@ -197,7 +198,7 @@ export default function Onboarding() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-200 hover:shadow-xl">
           {/* Step 1: Skin Tone */}
           {step === 1 && (
             <div>
@@ -206,7 +207,7 @@ export default function Onboarding() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {skinToneOptions.map(option => (
-                  <label key={option.value} className="relative">
+                  <label key={option.value} className="relative block focus-within:ring-2 focus-within:ring-pink-400 transition-all duration-200">
                     <input
                       type="radio"
                       name="skinTone"
@@ -403,7 +404,8 @@ export default function Onboarding() {
             <button
               onClick={prevStep}
               disabled={step === 1}
-              className="px-6 py-2 text-gray-600 hover:text-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="mr-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 rounded transition-all duration-200"
+              aria-label="Previous step"
             >
               ← Back
             </button>
@@ -427,7 +429,8 @@ export default function Onboarding() {
               <button
                 onClick={nextStep}
                 disabled={!canProceed()}
-                className="px-8 py-3 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded transition-all duration-200 disabled:bg-gray-300"
+                aria-label="Next step"
               >
                 Next →
               </button>

@@ -78,7 +78,8 @@ function App() {
           </p>
           <button
             onClick={openOnboarding}
-            className="w-full py-2 px-4 bg-pink-500 hover:bg-pink-600 text-white rounded-md font-medium transition-colors"
+            className="w-full py-2 px-4 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded-md font-medium transition-all duration-200 shadow-sm"
+            aria-label="Set up skin profile"
           >
             Set Up Profile
           </button>
@@ -99,14 +100,15 @@ function App() {
           </div>
           <button
             onClick={openOnboarding}
-            className="text-xs text-gray-500 hover:text-gray-700 underline"
+            className="text-xs text-gray-500 hover:text-gray-700 underline focus:outline-none focus:ring-2 focus:ring-pink-400 rounded"
+            aria-label="Edit skin profile"
           >
             Edit Profile
           </button>
         </div>
 
         {/* Profile Summary */}
-        <div className="bg-white rounded-lg p-3 mb-4 shadow-sm">
+        <div className="bg-white rounded-lg p-3 mb-4 shadow-sm transition-all duration-200 hover:shadow-md">
           <div className="text-sm text-gray-600">
             <div><strong>Skin:</strong> {skinProfile.skinTone} • {skinProfile.skinType}</div>
             {skinProfile.allergies.length > 0 && (
@@ -119,12 +121,15 @@ function App() {
         <button
           onClick={analyzeCurrentPage}
           disabled={loading}
-          className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors mb-4"
+          className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 disabled:bg-gray-300 text-white rounded-lg font-medium transition-all duration-200 mb-4 shadow-sm"
+          aria-busy={loading}
+          aria-label="Analyze this product for compatibility"
         >
           {loading ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Analyzing...
+              <span className="sr-only">Analyzing...</span>
+              <span aria-live="polite">Analyzing...</span>
             </div>
           ) : (
             'Analyze This Product'
@@ -140,7 +145,7 @@ function App() {
 
         {/* Product Info */}
         {productInfo && (
-          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+          <div className="bg-white rounded-lg p-4 mb-4 shadow-sm transition-all duration-200 hover:shadow-md">
             <h2 className="font-semibold text-gray-800 mb-2">Product Found</h2>
             <div className="space-y-1 text-sm text-gray-600">
               <div><strong>{productInfo.brand}</strong> {productInfo.name}</div>
@@ -155,7 +160,7 @@ function App() {
 
         {/* Match Result */}
         {matchResult && (
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-white rounded-lg p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             {/* Verdict */}
             <div className="rounded-lg p-3 mb-3 bg-gray-100">
               <div className="flex items-center justify-between">
@@ -209,7 +214,7 @@ function App() {
               </div>
             )}
             {/* Detailed Analysis */}
-            <div className="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md">
               <h3 className="font-semibold text-pink-700 mb-3 text-base">Detailed Analysis</h3>
               <div className="mb-2 flex flex-wrap items-center">
                 <span className="font-medium text-green-700 mr-2">Beneficial:</span>
@@ -243,7 +248,7 @@ function App() {
               </div>
             </div>
             {/* Score Breakdown */}
-            <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md">
               <h3 className="font-semibold text-pink-700 mb-3 text-base">Score Breakdown</h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><span className="font-medium text-gray-700">Skin Type:</span> <span className="text-gray-800">{matchResult.breakdown.skinTypeScore}</span></div>
