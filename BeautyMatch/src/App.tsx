@@ -17,6 +17,19 @@ function App() {
         setSkinProfile(result.skinProfile)
       }
     })
+    // Listen for changes to skinProfile in storage
+    function handleStorageChange(
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string
+    ) {
+      if (area === 'sync' && changes.skinProfile) {
+        setSkinProfile(changes.skinProfile.newValue)
+      }
+    }
+    chrome.storage.onChanged.addListener(handleStorageChange)
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange)
+    }
   }, [])
 
   const analyzeCurrentPage = async () => {
