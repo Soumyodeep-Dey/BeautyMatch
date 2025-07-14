@@ -13,6 +13,7 @@ export default function Onboarding() {
   const [dislikedBrands, setDislikedBrands] = useState("")
   const [formulations, setFormulations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<string>("");
 
   // Add useEffect to load profile on mount
   useEffect(() => {
@@ -111,8 +112,8 @@ export default function Onboarding() {
   }
 
   const saveProfile = async () => {
-    setIsLoading(true)
-
+    setIsLoading(true);
+    setSaveMessage("");
     const profile = {
       skinTone: skinTone.trim(),
       skinType: skinType.trim().toLowerCase(),
@@ -124,36 +125,30 @@ export default function Onboarding() {
       favoriteBrands: favoriteBrands.split(",").map(b => b.trim()).filter(b => b.length > 0),
       dislikedBrands: dislikedBrands.split(",").map(b => b.trim()).filter(b => b.length > 0),
       formulationPreferences: formulations
-    }
-
+    };
     console.log('Saving profile:', profile);
-
     try {
-      // Check if we're in a Chrome extension context
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await new Promise<void>((resolve, reject) => {
-          chrome.storage.sync.set({ skinProfile: profile }, () => {
-            if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError)
-            } else {
-              resolve()
-            }
-          })
-        })
+        chrome.storage.sync.set({ skinProfile: profile }, () => {
+          if (chrome.runtime.lastError) {
+            setSaveMessage('Error saving profile: ' + chrome.runtime.lastError.message);
+            // Fallback to localStorage for debugging
+            localStorage.setItem('skinProfile', JSON.stringify(profile));
+          } else {
+            setSaveMessage('Profile saved!');
+          }
+          setIsLoading(false);
+        });
       } else {
-        // Fallback to localStorage for development/testing
-        localStorage.setItem('skinProfile', JSON.stringify(profile))
+        localStorage.setItem('skinProfile', JSON.stringify(profile));
+        setSaveMessage('Profile saved to localStorage!');
+        setIsLoading(false);
       }
-
-      // Show success message
-      setStep(6)
-    } catch (error) {
-      console.error('Failed to save profile:', error)
-      alert("Failed to save profile. Please try again.")
-    } finally {
-      setIsLoading(false)
+    } catch (error: any) {
+      setSaveMessage('Error saving profile: ' + (error?.message || error));
+      setIsLoading(false);
     }
-  }
+  };
 
   const nextStep = () => {
     if (step < 6) setStep(step + 1)
@@ -195,6 +190,18 @@ export default function Onboarding() {
           <p className="text-gray-600 mb-6">
             Your BeautyMatch profile is ready. You can now get personalized product recommendations on beauty sites.
           </p>
+          {/* Save Profile Button before Start Shopping */}
+          <button
+            onClick={saveProfile}
+            disabled={isLoading}
+            className="w-full py-3 px-4 mb-3 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+            aria-label="Save profile"
+          >
+            {isLoading ? 'Saving...' : 'Save Profile'}
+          </button>
+          {saveMessage && (
+            <div className={`mb-4 text-center text-sm ${saveMessage.startsWith('Error') ? 'text-red-600' : 'text-green-700'}`}>{saveMessage}</div>
+          )}
           <button
             onClick={handleComplete}
             className="w-full py-3 px-4 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
@@ -216,7 +223,6 @@ export default function Onboarding() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">BeautyMatch Setup</h1>
           <p className="text-gray-600">Let's create your personalized skin profile</p>
         </div>
-
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
@@ -230,7 +236,6 @@ export default function Onboarding() {
             ></div>
           </div>
         </div>
-
         <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-200 hover:shadow-xl">
           {/* Step 1: Skin Tone */}
           {step === 1 && (
@@ -442,21 +447,14 @@ export default function Onboarding() {
             >
               ← Back
             </button>
-
             {step === totalSteps ? (
               <button
                 onClick={saveProfile}
                 disabled={isLoading}
-                className="px-8 py-3 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 text-white rounded transition-all duration-200 shadow-sm"
+                aria-label="Save profile"
               >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Saving...
-                  </div>
-                ) : (
-                  'Complete Setup'
-                )}
+                {isLoading ? 'Saving...' : 'Save Profile'}
               </button>
             ) : (
               <button
@@ -469,6 +467,10 @@ export default function Onboarding() {
               </button>
             )}
           </div>
+          {/* Save Profile Button (always visible) - REMOVE, now only on last step above */}
+          {saveMessage && (
+            <div className={`mt-6 text-center text-sm ${saveMessage.startsWith('Error') ? 'text-red-600' : 'text-green-700'}`}>{saveMessage}</div>
+          )}
         </div>
       </div>
     </div>
