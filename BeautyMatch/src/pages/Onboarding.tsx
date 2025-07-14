@@ -126,6 +126,8 @@ export default function Onboarding() {
       formulationPreferences: formulations
     }
 
+    console.log('Saving profile:', profile);
+
     try {
       // Check if we're in a Chrome extension context
       if (typeof chrome !== 'undefined' && chrome.storage) {
