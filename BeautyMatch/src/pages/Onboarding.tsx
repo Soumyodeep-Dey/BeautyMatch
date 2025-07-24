@@ -215,264 +215,281 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">💄</div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">BeautyMatch Setup</h1>
-          <p className="text-gray-600">Let's create your personalized skin profile</p>
-        </div>
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-500">Step {step} of {totalSteps}</span>
-            <span className="text-sm text-gray-500">{Math.round((step / totalSteps) * 100)}% complete</span>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-2">💄</div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">BeautyMatch Setup</h1>
+            <p className="text-gray-600">Let's create your personalized skin profile</p>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-pink-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
-            ></div>
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-500">Step {step} of {totalSteps}</span>
+              <span className="text-sm text-gray-500">{Math.round((step / totalSteps) * 100)}% complete</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-pink-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(step / totalSteps) * 100}%` }}
+              ></div>
+            </div>
           </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-200 hover:shadow-xl">
-          {/* Step 1: Skin Tone */}
-          {step === 1 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin tone?</h2>
-              <p className="text-gray-600 mb-6">Choose the option that best matches your skin tone and undertone</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {skinToneOptions.map(option => (
-                  <label key={option.value} className="relative block focus-within:ring-2 focus-within:ring-pink-400 transition-all duration-200">
-                    <input
-                      type="radio"
-                      name="skinTone"
-                      value={option.value}
-                      checked={skinTone === option.value}
-                      onChange={(e) => setSkinTone(e.target.value)}
-                      className="sr-only"
-                    />
-                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinTone === option.value
-                        ? 'border-pink-500 bg-pink-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <div className="font-medium text-gray-800">{option.label}</div>
-                      <div className="text-sm text-gray-600">{option.description}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Skin Type */}
-          {step === 2 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin type?</h2>
-              <p className="text-gray-600 mb-6">Select the description that best fits your skin</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {skinTypeOptions.map(option => (
-                  <label key={option.value} className="relative">
-                    <input
-                      type="radio"
-                      name="skinType"
-                      value={option.value}
-                      checked={skinType === option.value}
-                      onChange={(e) => setSkinType(e.target.value)}
-                      className="sr-only"
-                    />
-                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinType === option.value
-                        ? 'border-pink-500 bg-pink-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <div className="font-medium text-gray-800">{option.label}</div>
-                      <div className="text-sm text-gray-600">{option.description}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Allergies & Concerns */}
-          {step === 3 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Final touches</h2>
-
-              {/* Allergies */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Known allergies or ingredients to avoid (optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., fragrance, parabens, sulfates"
-                  value={allergies}
-                  onChange={(e) => setAllergies(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                />
-                <p className="text-sm text-gray-500 mt-1">Separate multiple items with commas</p>
-              </div>
-
-              {/* Skin Concerns */}
+          <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-200 hover:shadow-xl">
+            {/* Step 1: Skin Tone */}
+            {step === 1 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  What are your main skin concerns? (optional)
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {concernOptions.map(concern => (
-                    <button
-                      key={concern}
-                      type="button"
-                      onClick={() => toggleConcern(concern)}
-                      className={`p-2 text-sm border rounded-lg transition-all ${concerns.includes(concern)
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin tone?</h2>
+                <p className="text-gray-600 mb-6">Choose the option that best matches your skin tone and undertone</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {skinToneOptions.map(option => (
+                    <label key={option.value} className="relative block focus-within:ring-2 focus-within:ring-pink-400 transition-all duration-200">
+                      <input
+                        type="radio"
+                        name="skinTone"
+                        value={option.value}
+                        checked={skinTone === option.value}
+                        onChange={(e) => setSkinTone(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinTone === option.value
+                        ? 'border-pink-500 bg-pink-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <div className="font-medium text-gray-800">{option.label}</div>
+                        <div className="text-sm text-gray-600">{option.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Skin Type */}
+            {step === 2 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">What's your skin type?</h2>
+                <p className="text-gray-600 mb-6">Select the description that best fits your skin</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {skinTypeOptions.map(option => (
+                    <label key={option.value} className="relative">
+                      <input
+                        type="radio"
+                        name="skinType"
+                        value={option.value}
+                        checked={skinType === option.value}
+                        onChange={(e) => setSkinType(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${skinType === option.value
+                        ? 'border-pink-500 bg-pink-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <div className="font-medium text-gray-800">{option.label}</div>
+                        <div className="text-sm text-gray-600">{option.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Allergies & Concerns */}
+            {step === 3 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-6">Final touches</h2>
+
+                {/* Allergies */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Known allergies or ingredients to avoid (optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., fragrance, parabens, sulfates"
+                    value={allergies}
+                    onChange={(e) => setAllergies(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Separate multiple items with commas</p>
+                </div>
+
+                {/* Skin Concerns */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    What are your main skin concerns? (optional)
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {concernOptions.map(concern => (
+                      <button
+                        key={concern}
+                        type="button"
+                        onClick={() => toggleConcern(concern)}
+                        className={`p-2 text-sm border rounded-lg transition-all ${concerns.includes(concern)
                           ? 'border-pink-500 bg-pink-50 text-pink-700'
                           : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                          }`}
+                      >
+                        {concern}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Preferred Coverage & Finish (optional) */}
+            {step === 4 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Makeup Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+                {/* Coverage */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred coverage</label>
+                  <div className="flex flex-wrap gap-2">
+                    {coverageOptions.map(opt => (
+                      <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="coverage"
+                          value={opt.value}
+                          checked={coverage === opt.value}
+                          onChange={() => setCoverage(opt.value)}
+                          className="accent-pink-500"
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {/* Finish */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred finish</label>
+                  <div className="flex flex-wrap gap-2">
+                    {finishOptions.map(opt => (
+                      <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="finish"
+                          value={opt.value}
+                          checked={finish === opt.value}
+                          onChange={() => setFinish(opt.value)}
+                          className="accent-pink-500"
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Brand Preferences (optional) */}
+            {step === 5 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Brand Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Favorite brands</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Maybelline, L'Oreal, The Ordinary"
+                    value={favoriteBrands}
+                    onChange={e => setFavoriteBrands(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Brands to avoid</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., BrandX, BrandY"
+                    value={dislikedBrands}
+                    onChange={e => setDislikedBrands(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Formulation Preferences (optional) */}
+            {step === 6 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Formulation Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {formulationOptions.map(formulation => (
+                    <button
+                      key={formulation}
+                      type="button"
+                      onClick={() => toggleFormulation(formulation)}
+                      className={`p-2 text-sm border rounded-lg transition-all ${formulations.includes(formulation)
+                        ? 'border-pink-500 bg-pink-50 text-pink-700'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
                         }`}
                     >
-                      {concern}
+                      {formulation}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 4: Preferred Coverage & Finish (optional) */}
-          {step === 4 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Makeup Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
-              {/* Coverage */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred coverage</label>
-                <div className="flex flex-wrap gap-2">
-                  {coverageOptions.map(opt => (
-                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="coverage"
-                        value={opt.value}
-                        checked={coverage === opt.value}
-                        onChange={() => setCoverage(opt.value)}
-                        className="accent-pink-500"
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {/* Finish */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Preferred finish</label>
-                <div className="flex flex-wrap gap-2">
-                  {finishOptions.map(opt => (
-                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="finish"
-                        value={opt.value}
-                        checked={finish === opt.value}
-                        onChange={() => setFinish(opt.value)}
-                        className="accent-pink-500"
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Brand Preferences (optional) */}
-          {step === 5 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Brand Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Favorite brands</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Maybelline, L'Oreal, The Ordinary"
-                  value={favoriteBrands}
-                  onChange={e => setFavoriteBrands(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                />
-                <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Brands to avoid</label>
-                <input
-                  type="text"
-                  placeholder="e.g., BrandX, BrandY"
-                  value={dislikedBrands}
-                  onChange={e => setDislikedBrands(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                />
-                <p className="text-sm text-gray-500 mt-1">Separate multiple brands with commas</p>
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: Formulation Preferences (optional) */}
-          {step === 6 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Formulation Preferences <span className="text-sm text-gray-500">(optional)</span></h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {formulationOptions.map(formulation => (
-                  <button
-                    key={formulation}
-                    type="button"
-                    onClick={() => toggleFormulation(formulation)}
-                    className={`p-2 text-sm border rounded-lg transition-all ${formulations.includes(formulation)
-                        ? 'border-pink-500 bg-pink-50 text-pink-700'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}
-                  >
-                    {formulation}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
-            <button
-              onClick={prevStep}
-              disabled={step === 1}
-              className="mr-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 rounded transition-all duration-200"
-              aria-label="Previous step"
-            >
-              ← Back
-            </button>
-            {step === totalSteps ? (
+            {/* Navigation */}
+            <div className="flex justify-between mt-8">
               <button
-                onClick={saveProfile}
-                disabled={isLoading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 text-white rounded transition-all duration-200 shadow-sm"
-                aria-label="Save profile"
+                onClick={prevStep}
+                disabled={step === 1}
+                className="mr-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-400 rounded transition-all duration-200"
+                aria-label="Previous step"
               >
-                {isLoading ? 'Saving...' : 'Save Profile'}
+                ← Back
               </button>
-            ) : (
-              <button
-                onClick={nextStep}
-                disabled={!canProceed()}
-                className="px-4 py-2 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded transition-all duration-200 disabled:bg-gray-300"
-                aria-label="Next step"
-              >
-                Next →
-              </button>
+              {step === totalSteps ? (
+                <button
+                  onClick={saveProfile}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 text-white rounded transition-all duration-200 shadow-sm"
+                  aria-label="Save profile"
+                >
+                  {isLoading ? 'Saving...' : 'Save Profile'}
+                </button>
+              ) : (
+                <button
+                  onClick={nextStep}
+                  disabled={!canProceed()}
+                  className="px-4 py-2 bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-pink-400 text-white rounded transition-all duration-200 disabled:bg-gray-300"
+                  aria-label="Next step"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
+            {/* Save Profile Button (always visible) - REMOVE, now only on last step above */}
+            {saveMessage && (
+              <div className={`mt-6 text-center text-sm ${saveMessage.startsWith('Error') ? 'text-red-600' : 'text-green-700'}`}>{saveMessage}</div>
             )}
           </div>
-          {/* Save Profile Button (always visible) - REMOVE, now only on last step above */}
-          {saveMessage && (
-            <div className={`mt-6 text-center text-sm ${saveMessage.startsWith('Error') ? 'text-red-600' : 'text-green-700'}`}>{saveMessage}</div>
-          )}
         </div>
       </div>
-    </div>
+      {/* Footer */}
+      <div className="mt-12 flex justify-center">
+        <a
+          href="https://soumyodeep-dey.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 font-semibold text-xs shadow hover:from-pink-200 hover:to-purple-200 hover:text-pink-900 transition-all duration-200 border border-pink-200"
+          style={{ letterSpacing: "0.03em" }}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="mr-1">
+            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+          </svg>
+          Built by Soumyodeep Dey
+        </a>
+      </div>
+    </>
   )
 }
