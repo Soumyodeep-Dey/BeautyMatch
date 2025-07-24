@@ -233,8 +233,8 @@ function App() {
                 <span className="font-medium text-green-700 mr-2">Beneficial:</span>
                 {(matchResult.detailedAnalysis?.beneficialIngredients?.length > 0)
                   ? matchResult.detailedAnalysis.beneficialIngredients.map((item, idx) => (
-                      <span key={idx} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
-                    ))
+                    <span key={idx} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
+                  ))
                   : <span className="text-gray-500 text-xs">None</span>
                 }
               </div>
@@ -242,8 +242,8 @@ function App() {
                 <span className="font-medium text-red-700 mr-2">Problematic:</span>
                 {(matchResult.detailedAnalysis?.problematicIngredients?.length > 0)
                   ? matchResult.detailedAnalysis.problematicIngredients.map((item, idx) => (
-                      <span key={idx} className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
-                    ))
+                    <span key={idx} className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{item}</span>
+                  ))
                   : <span className="text-gray-500 text-xs">None</span>
                 }
               </div>
@@ -277,9 +277,16 @@ function App() {
 
         {/* Footer */}
         <div className="mt-4 text-center">
-          <div className="text-xs text-gray-500">
+          <a
+            href="https://soumyodeep-dey.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:text-pink-600 transition-colors underline"
+          >
             BeautyMatch • Personalized beauty analysis
-          </div>
+            <br />
+            Built by Soumyodeep Dey
+          </a>
         </div>
       </div>
     </div>
@@ -288,4 +295,3 @@ function App() {
 
 export default App;
 
- 
