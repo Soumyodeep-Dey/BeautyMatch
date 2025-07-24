@@ -481,7 +481,7 @@ export default function Onboarding() {
           href="https://soumyodeep-dey.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 font-semibold text-xs shadow hover:from-pink-200 hover:to-purple-200 hover:text-pink-900 transition-all duration-200 border border-pink-200"
+          className="inline-flex items-center gap-1 px-4 py-4 rounded-full bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 font-semibold text-xs shadow hover:from-pink-200 hover:to-purple-200 hover:text-pink-900 transition-all duration-200 border border-pink-200"
           style={{ letterSpacing: "0.03em" }}
         >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" className="mr-1">
