@@ -95,4 +95,4 @@ npm run build
 
 ---
 
-> Built with 💅 by Soumyodeep Dey and contributors.
+> Built with by [Soumyodeep Dey](https://soumyodeep-dey.vercel.app/) and contributors.
