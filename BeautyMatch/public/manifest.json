@@ -10,9 +10,7 @@
   ],
   "host_permissions": [
     "https://*.nykaa.com/*",
-    "https://*.sephora.com/*",
     "https://*.amazon.in/*",
-    "https://*.amazon.com/*",
     "https://*.sephora.in/*"
   ],
   "background": {
@@ -23,9 +21,7 @@
     {
       "matches": [
         "https://*.nykaa.com/*",
-        "https://*.sephora.com/*",
         "https://*.amazon.in/*",
-        "https://*.amazon.com/*",
         "https://*.sephora.in/*"
       ],
       "js": [
