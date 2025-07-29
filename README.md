@@ -97,3 +97,4 @@ npm run build
 ---
 
 > 🚀 Built with ❤️ by [Soumyodeep Dey](https://soumyodeep-dey.vercel.app/)
+> For Privacy-Policy [Click Here](https://beautymatch-privacy.vercel.app/)
