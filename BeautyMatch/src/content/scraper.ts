@@ -100,7 +100,7 @@ class BeautyProductScraper {
         document.querySelector('.css-pz80c5') ||
         document.querySelector('[data-comp="Ingredients"]') ||
         document.querySelector('.Ingredients');
-      
+
       if (ingredientsElement) {
         ingredientsText = ingredientsElement.textContent || '';
       }
@@ -110,10 +110,10 @@ class BeautyProductScraper {
         const detailsSection = document.querySelector('[data-test-id="product-details"]') ||
           document.querySelector('.ProductDetails') ||
           document.querySelector('.css-details');
-        
+
         if (detailsSection) {
-          const ingredientsParagraph = Array.from(detailsSection.querySelectorAll('p, div')).find(el => 
-            el.textContent?.toLowerCase().includes('ingredients:') || 
+          const ingredientsParagraph = Array.from(detailsSection.querySelectorAll('p, div')).find(el =>
+            el.textContent?.toLowerCase().includes('ingredients:') ||
             el.textContent?.toLowerCase().includes('ingredient list')
           );
           if (ingredientsParagraph) {
@@ -125,11 +125,11 @@ class BeautyProductScraper {
       // 3. Look for ingredients in accordion/expandable sections
       if (!ingredientsText) {
         const accordionButtons = Array.from(document.querySelectorAll('button, [role="button"]'));
-        const ingredientsButton = accordionButtons.find(btn => 
+        const ingredientsButton = accordionButtons.find(btn =>
           btn.textContent?.toLowerCase().includes('ingredients') ||
           btn.textContent?.toLowerCase().includes('formula')
         );
-        
+
         if (ingredientsButton) {
           // Try to find the associated content
           const buttonId = ingredientsButton.getAttribute('aria-controls');
@@ -154,7 +154,7 @@ class BeautyProductScraper {
         const description = document.querySelector('[data-test-id="product-description"]') ||
           document.querySelector('.ProductDescription') ||
           document.querySelector('.css-description');
-        
+
         if (description) {
           const descText = description.textContent || '';
           if (descText.toLowerCase().includes('ingredients')) {
@@ -316,13 +316,13 @@ class BeautyProductScraper {
     let cleanText = text.replace(/^[^:]*:/, ''); // Remove everything before first colon
     cleanText = cleanText.replace(/\([^)]*\)/g, ''); // Remove content in parentheses
     cleanText = cleanText.replace(/\[[^\]]*\]/g, ''); // Remove content in brackets
-    
+
     // Split by common separators
     const ingredients = cleanText
       .split(/[,;•\n]/)
       .map(ingredient => ingredient.trim().toLowerCase())
-      .filter(ingredient => 
-        ingredient.length > 2 && 
+      .filter(ingredient =>
+        ingredient.length > 2 &&
         ingredient.length < 50 &&
         !ingredient.match(/^\d+/) && // Remove numbered items
         !ingredient.includes('www.') && // Remove URLs
@@ -536,99 +536,101 @@ type MatchResult = {
 const INGREDIENT_DATABASE = {
   beneficial: {
     dry: [
-      { name: "hyaluronic acid", score: 25, description: "Intense hydration" },
-      { name: "glycerin", score: 20, description: "Moisture retention" },
-      { name: "ceramides", score: 25, description: "Barrier repair" },
-      { name: "squalane", score: 20, description: "Lightweight moisture" },
-      { name: "shea butter", score: 15, description: "Nourishing" },
-      { name: "jojoba oil", score: 15, description: "Skin-mimicking oil" },
-      { name: "vitamin e", score: 10, description: "Antioxidant protection" },
-      { name: "niacinamide", score: 15, description: "Barrier support" },
-      { name: "peptides", score: 20, description: "Skin repair" },
-      { name: "panthenol", score: 15, description: "Soothing hydration" }
+      { name: "hyaluronic acid", score: 25, description: "Intense hydration, binds moisture" },
+      { name: "ceramides", score: 25, description: "Barrier repair and moisture retention" },
+      { name: "glycerin", score: 20, description: "Humectant, draws and retains moisture" },
+      { name: "hyaluronic acid", score: 20, description: "Multi-weight hydration" },
+      { name: "squalane", score: 20, description: "Lightweight emollient, locks hydration" },
+      { name: "niacinamide", score: 15, description: "Strengthens barrier, reduces TEWL" },
+      { name: "peptides", score: 20, description: "Supports skin repair" },
+      { name: "panthenol", score: 15, description: "Soothing hydration and calming" },
+      { name: "shea butter", score: 15, description: "Occlusive nourishment" },
+      { name: "vitamin E", score: 10, description: "Antioxidant support" }
     ],
     oily: [
-      { name: "niacinamide", score: 25, description: "Oil control" },
-      { name: "salicylic acid", score: 20, description: "Pore cleaning" },
-      { name: "zinc oxide", score: 15, description: "Oil absorption" },
-      { name: "kaolin clay", score: 15, description: "Mattifying" },
-      { name: "tea tree oil", score: 10, description: "Antibacterial" },
-      { name: "retinol", score: 20, description: "Pore refinement" },
-      { name: "benzoyl peroxide", score: 15, description: "Acne treatment" },
-      { name: "dimethicone", score: 10, description: "Non-comedogenic base" }
+      { name: "niacinamide", score: 25, description: "Reduces sebum, minimizes shine" },
+      { name: "salicylic acid", score: 20, description: "Exfoliates pores, anti-inflammatory" },
+      { name: "zinc oxide", score: 15, description: "Oil control, soothing" },
+      { name: "kaolin clay", score: 15, description: "Mattifying absorbent" },
+      { name: "retinol", score: 20, description: "Refines pores and texture" },
+      { name: "benzoyl peroxide", score: 15, description: "Antibacterial acne action" },
+      { name: "tea tree oil", score: 10, description: "Natural antibacterial support" },
+      { name: "dimethicone", score: 10, description: "Non-comedogenic emollient" }
     ],
     sensitive: [
-      { name: "aloe vera", score: 20, description: "Soothing" },
-      { name: "chamomile", score: 15, description: "Anti-inflammatory" },
-      { name: "allantoin", score: 15, description: "Healing" },
-      { name: "panthenol", score: 20, description: "Calming" },
-      { name: "zinc oxide", score: 15, description: "Gentle protection" },
-      { name: "titanium dioxide", score: 15, description: "Physical sunscreen" },
-      { name: "oat extract", score: 10, description: "Gentle soothing" },
-      { name: "centella asiatica", score: 20, description: "Anti-inflammatory" }
+      { name: "aloe vera", score: 20, description: "Soothing and cooling" },
+      { name: "centella asiatica", score: 20, description: "Calms irritation and inflammation" },
+      { name: "panthenol", score: 20, description: "Hydrational calming" },
+      { name: "allantoin", score: 15, description: "Gentle healing" },
+      { name: "zinc oxide", score: 15, description: "Barrier-protecting mineral" },
+      { name: "titanium dioxide", score: 15, description: "Physical UV protection, minimal irritation" },
+      { name: "chamomile", score: 15, description: "Anti‑inflammatory botanical" },
+      { name: "niacinamide", score: 15, description: "Barrier strengthening, reduces redness" }
     ],
     mature: [
-      { name: "retinol", score: 30, description: "Anti-aging powerhouse" },
-      { name: "peptides", score: 25, description: "Collagen support" },
-      { name: "vitamin c", score: 25, description: "Antioxidant brightening" },
+      { name: "retinol", score: 30, description: "Collagen stimulating anti-aging" },
+      { name: "vitamin c", score: 25, description: "Antioxidant brightening & collagen support" },
+      { name: "peptides", score: 25, description: "Stimulates structural proteins" },
       { name: "hyaluronic acid", score: 20, description: "Plumping hydration" },
-      { name: "niacinamide", score: 15, description: "Skin strengthening" },
-      { name: "bakuchiol", score: 20, description: "Natural retinol alternative" },
-      { name: "coenzyme q10", score: 15, description: "Cellular energy" },
-      { name: "alpha lipoic acid", score: 15, description: "Antioxidant" }
+      { name: "bakuchiol", score: 20, description: "Retinol alternative with gentler tolerance" },
+      { name: "niacinamide", score: 15, description: "Strengthens barrier & hydrates" },
+      { name: "coenzyme q10", score: 15, description: "Antioxidant cellular energy" },
+      { name: "alpha lipoic acid", score: 15, description: "Broad antioxidant, reduces fine lines" }
     ],
     combination: [
-      { name: "niacinamide", score: 25, description: "Balanced oil control" },
-      { name: "hyaluronic acid", score: 20, description: "Hydrates without oil" },
-      { name: "salicylic acid", score: 15, description: "T-zone treatment" },
-      { name: "zinc oxide", score: 10, description: "Gentle oil control" },
-      { name: "glycerin", score: 15, description: "Balanced moisture" }
+      { name: "niacinamide", score: 25, description: "Balances oil and supports dryness" },
+      { name: "hyaluronic acid", score: 20, description: "Hydrates dry zones lightly" },
+      { name: "salicylic acid", score: 15, description: "Targets T-zone oil and unclogs pores" },
+      { name: "glycerin", score: 15, description: "Humectant for balanced zones" },
+      { name: "zinc oxide", score: 10, description: "Gentle mattifying" }
     ],
     "acne-prone": [
-      { name: "salicylic acid", score: 30, description: "Acne treatment" },
-      { name: "benzoyl peroxide", score: 25, description: "Bacteria fighting" },
-      { name: "niacinamide", score: 20, description: "Reduces inflammation" },
-      { name: "tea tree oil", score: 15, description: "Natural antibacterial" },
-      { name: "zinc oxide", score: 15, description: "Healing support" },
-      { name: "retinol", score: 20, description: "Prevents clogged pores" }
+      { name: "salicylic acid", score: 30, description: "Deep pore exfoliation" },
+      { name: "benzoyl peroxide", score: 25, description: "Kills acne-causing bacteria" },
+      { name: "niacinamide", score: 20, description: "Reduces inflammation & sebum" },
+      { name: "retinol", score: 20, description: "Prevents comedones, normalizes turnover" },
+      { name: "zinc oxide", score: 15, description: "Soothing antimicrobial healing" },
+      { name: "tea tree oil", score: 15, description: "Natural acne-fighting support" }
     ]
   },
+
   problematic: {
     dry: [
-      { name: "alcohol denat", score: -20, description: "Drying agent" },
-      { name: "sodium lauryl sulfate", score: -15, description: "Harsh cleanser" },
-      { name: "menthol", score: -10, description: "Can irritate dry skin" },
-      { name: "high concentration acids", score: -15, description: "Can over-exfoliate" }
+      { name: "alcohol denat", score: -20, description: "Drying agent, weakens barrier" },
+      { name: "sodium lauryl sulfate", score: -15, description: "Harsh surfactant that strips oils" },
+      { name: "menthol", score: -10, description: "Cooling but irritating to dry skin" },
+      { name: "high concentration acids", score: -15, description: "Over‑exfoliate and compromise barrier" }
     ],
     oily: [
-      { name: "mineral oil", score: -15, description: "Can clog pores" },
-      { name: "coconut oil", score: -10, description: "Comedogenic" },
-      { name: "heavy oils", score: -10, description: "May increase oiliness" },
-      { name: "lanolin", score: -10, description: "Can clog pores" }
+      { name: "mineral oil", score: -15, description: "Can clog pores in oily skin" },
+      { name: "coconut oil", score: -10, description: "Highly comedogenic for oily/acne‑prone" },
+      { name: "heavy oils", score: -10, description: "May increase oiliness and clog pores" },
+      { name: "lanolin", score: -10, description: "Potentially comedogenic" }
     ],
     sensitive: [
-      { name: "fragrance", score: -25, description: "Common irritant" },
-      { name: "essential oils", score: -20, description: "Can cause reactions" },
-      { name: "alcohol denat", score: -20, description: "Drying and irritating" },
-      { name: "retinol", score: -15, description: "Can cause irritation" },
-      { name: "alpha hydroxy acids", score: -15, description: "Can irritate" },
-      { name: "beta hydroxy acids", score: -15, description: "Can irritate" }
+      { name: "fragrance", score: -25, description: "Common irritant and allergen" },
+      { name: "essential oils", score: -20, description: "Sensitizers; may trigger reactions" },
+      { name: "alcohol denat", score: -20, description: "Drying and irritating on sensitive skin" },
+      { name: "retinol", score: -15, description: "Can trigger irritation in sensitive skin" },
+      { name: "alpha hydroxy acids", score: -15, description: "May irritate reactive skin" },
+      { name: "beta hydroxy acids", score: -15, description: "Can cause inflammation in sensitive skin" }
     ],
     mature: [
-      { name: "alcohol denat", score: -15, description: "Drying to aging skin" },
-      { name: "harsh sulfates", score: -10, description: "Strip natural oils" }
+      { name: "alcohol denat", score: -15, description: "Drying to aging skin, barrier‑damaging" },
+      { name: "harsh sulfates", score: -10, description: "Strip natural oils, exacerbate dryness" }
     ],
     combination: [
-      { name: "heavy oils", score: -10, description: "Can worsen oily areas" },
-      { name: "alcohol denat", score: -15, description: "Can dry out already dry areas" }
+      { name: "heavy oils", score: -10, description: "Can worsen oily zones while over-moisturizing dry ones" },
+      { name: "alcohol denat", score: -15, description: "May overdry dry patches and imbalance skin" }
     ],
     "acne-prone": [
-      { name: "coconut oil", score: -20, description: "Highly comedogenic" },
-      { name: "cocoa butter", score: -15, description: "Can clog pores" },
-      { name: "lanolin", score: -15, description: "May cause breakouts" },
-      { name: "mineral oil", score: -10, description: "Can clog pores" }
+      { name: "coconut oil", score: -20, description: "Highly comedogenic, clogs follicles" },
+      { name: "cocoa butter", score: -15, description: "Can block pores and trigger acne" },
+      { name: "lanolin", score: -15, description: "Often causes breakouts in acne‑prone skin" },
+      { name: "mineral oil", score: -10, description: "May occlude pores and induce blemishes" }
     ]
   },
+
   universal_problematic: [
     { name: "parabens", score: -5, description: "Preservative sensitivity" },
     { name: "sulfates", score: -5, description: "Can be harsh" },
@@ -636,16 +638,15 @@ const INGREDIENT_DATABASE = {
   ]
 };
 
-// Skin concern specific ingredients
 const CONCERN_INGREDIENTS = {
-  acne: ["salicylic acid", "benzoyl peroxide", "niacinamide", "tea tree oil", "zinc oxide"],
-  aging: ["retinol", "peptides", "vitamin c", "hyaluronic acid", "bakuchiol"],
-  hyperpigmentation: ["vitamin c", "niacinamide", "kojic acid", "arbutin", "licorice root"],
-  dryness: ["hyaluronic acid", "ceramides", "glycerin", "squalane", "shea butter"],
-  sensitivity: ["aloe vera", "chamomile", "allantoin", "panthenol", "centella asiatica"],
-  dullness: ["vitamin c", "glycolic acid", "lactic acid", "niacinamide", "retinol"],
-  enlarged_pores: ["niacinamide", "salicylic acid", "retinol", "zinc oxide"],
-  oiliness: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay"]
+  acne: ["salicylic acid", "benzoyl peroxide", "niacinamide", "azelaic acid", "retinoids", "tea tree oil"],
+  aging: ["retinoids", "peptides", "vitamin C", "hyaluronic acid", "bakuchiol", "ceramides"],
+  hyperpigmentation: ["vitamin C", "niacinamide", "kojic acid", "arbutin", "azelaic acid", "licorice root"],
+  dryness: ["hyaluronic acid", "ceramides", "glycerin", "squalane", "shea butter", "niacinamide"],
+  sensitivity: ["aloe vera", "chamomile", "centella asiatica", "allantoin", "panthenol", "bakuchiol", "niacinamide"],
+  dullness: ["vitamin C", "glycolic acid", "lactic acid", "niacinamide", "retinoids"],
+  enlarged_pores: ["niacinamide", "salicylic acid", "retinoids", "zinc oxide"],
+  oiliness: ["niacinamide", "salicylic acid", "zinc oxide", "kaolin clay", "retinoids"]
 };
 
 // Paste all helper functions and analyzeProductAdvanced here
@@ -747,7 +748,7 @@ function analyzeProductAdvanced(product: ProductInfo, profile: SkinProfile): Mat
     (result.breakdown.brandScore * 0.05) // Bonus for preferred brands
   );
   // Slightly increase the score with a small bonus, max 100
-  result.score = Math.min(result.score + 7, 100);
+  result.score = Math.min(result.score + 10, 100);
 
   // 8. DETERMINE VERDICT AND CONFIDENCE
   const verdictAnalysis = determineVerdict(result.score, result.breakdown);
@@ -849,7 +850,7 @@ function analyzeSkinTypeCompatibility(product: ProductInfo, profile: SkinProfile
   }
 
   // Partial matches
-  const partialMatches = product.skinType.filter(type => 
+  const partialMatches = product.skinType.filter(type =>
     type.includes(profile.skinType) || profile.skinType.includes(type)
   );
 
@@ -863,11 +864,11 @@ function analyzeSkinTypeCompatibility(product: ProductInfo, profile: SkinProfile
   return { score: 30, reasons, warnings };
 }
 
-function analyzeIngredients(ingredients: string[], profile: SkinProfile): { 
-  score: number; 
-  reasons: string[]; 
-  warnings: string[]; 
-  beneficial: string[]; 
+function analyzeIngredients(ingredients: string[], profile: SkinProfile): {
+  score: number;
+  reasons: string[];
+  warnings: string[];
+  beneficial: string[];
   problematic: string[];
   neutral: string[];
 } {
@@ -886,10 +887,10 @@ function analyzeIngredients(ingredients: string[], profile: SkinProfile): {
 
   // Check beneficial ingredients
   for (const ingredient of ingredients) {
-    const beneficialMatch = beneficialIngredients.find(b => 
+    const beneficialMatch = beneficialIngredients.find(b =>
       ingredient.includes(b.name) || b.name.includes(ingredient)
     );
-    
+
     if (beneficialMatch) {
       beneficial.push(ingredient);
       totalScore += beneficialMatch.score;
@@ -897,10 +898,10 @@ function analyzeIngredients(ingredients: string[], profile: SkinProfile): {
       reasons.push(`✨ ${ingredient} - ${beneficialMatch.description}`);
     } else {
       // Check problematic ingredients
-      const problematicMatch = problematicIngredients.find(p => 
+      const problematicMatch = problematicIngredients.find(p =>
         ingredient.includes(p.name) || p.name.includes(ingredient)
       );
-      
+
       if (problematicMatch) {
         problematic.push(ingredient);
         totalScore += problematicMatch.score; // Negative score
@@ -914,10 +915,10 @@ function analyzeIngredients(ingredients: string[], profile: SkinProfile): {
 
   // Check universal problematic ingredients
   for (const ingredient of ingredients) {
-    const universalProblematic = INGREDIENT_DATABASE.universal_problematic.find(p => 
+    const universalProblematic = INGREDIENT_DATABASE.universal_problematic.find(p =>
       ingredient.includes(p.name) || p.name.includes(ingredient)
     );
-    
+
     if (universalProblematic && !problematic.includes(ingredient)) {
       problematic.push(ingredient);
       totalScore += universalProblematic.score;
@@ -938,9 +939,9 @@ function analyzeIngredients(ingredients: string[], profile: SkinProfile): {
   };
 }
 
-function analyzeSkinConcerns(ingredients: string[], concerns: string[]): { 
-  score: number; 
-  reasons: string[]; 
+function analyzeSkinConcerns(ingredients: string[], concerns: string[]): {
+  score: number;
+  reasons: string[];
   missingBeneficials: string[];
 } {
   const reasons: string[] = [];
@@ -955,7 +956,7 @@ function analyzeSkinConcerns(ingredients: string[], concerns: string[]): {
 
   for (const concern of concerns) {
     const concernIngredients = CONCERN_INGREDIENTS[concern as keyof typeof CONCERN_INGREDIENTS] || [];
-    const foundIngredients = ingredients.filter(ingredient => 
+    const foundIngredients = ingredients.filter(ingredient =>
       concernIngredients.some(ci => ingredient.includes(ci) || ci.includes(ingredient))
     );
 
@@ -963,7 +964,7 @@ function analyzeSkinConcerns(ingredients: string[], concerns: string[]): {
       concernsAddressed++;
       reasons.push(`🎯 Addresses ${concern}: ${foundIngredients.join(', ')}`);
     } else {
-      const missingForConcern = concernIngredients.filter(ci => 
+      const missingForConcern = concernIngredients.filter(ci =>
         !ingredients.some(ingredient => ingredient.includes(ci) || ci.includes(ingredient))
       );
       missingBeneficials.push(...missingForConcern);
@@ -1023,7 +1024,7 @@ function determineVerdict(score: number, breakdown: MatchResult['breakdown']): {
   if (score >= 60) return { verdict: "PARTIAL_MATCH", confidence: Math.max(confidence - 5, 60) };
   if (score >= 50) return { verdict: "FAIR_MATCH", confidence: Math.max(confidence - 10, 50) };
   if (score >= 40) return { verdict: "CAUTION", confidence: Math.max(confidence - 15, 40) };
-  
+
   return { verdict: "NOT_RECOMMENDED", confidence: Math.max(confidence - 20, 30) };
 }
 
