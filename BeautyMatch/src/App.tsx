@@ -203,7 +203,7 @@ function App() {
                         ? "text-yellow-700"
                         : "text-red-700"
                   }`}>
-                  {matchResult.verdict.replace("_", " ")}
+                  {matchResult.verdict === "CAUTION" ? "Needs Review" : matchResult.verdict.replace("_", " ")}
                 </span>
               </div>
               <div className="flex flex-col items-end">
@@ -211,6 +211,12 @@ function App() {
                 <span className="text-xs text-gray-500">Confidence: {matchResult.confidence || 0}%</span>
               </div>
             </div>
+            {/* Friendly message for CAUTION verdict */}
+            {matchResult.verdict === "CAUTION" && (
+              <div className="text-yellow-700 text-xs mt-2">
+                This product isn’t a perfect match for your profile, but it’s not necessarily bad! Check the recommendations below to see how it could work for you.
+              </div>
+            )}
             {/* Reasons */}
             {matchResult.reasons.length > 0 && (
               <div className="mb-3">
@@ -287,6 +293,7 @@ function App() {
                 </span>
               </div>
             </div>
+           
             {/* Score Breakdown */}
             <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md">
               <h3 className="font-semibold text-pink-700 mb-3 text-base">Score Breakdown</h3>

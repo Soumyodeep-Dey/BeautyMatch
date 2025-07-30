@@ -746,6 +746,8 @@ function analyzeProductAdvanced(product: ProductInfo, profile: SkinProfile): Mat
     (result.breakdown.preferenceScore * weights.preferences) +
     (result.breakdown.brandScore * 0.05) // Bonus for preferred brands
   );
+  // Slightly increase the score with a small bonus, max 100
+  result.score = Math.min(result.score + 7, 100);
 
   // 8. DETERMINE VERDICT AND CONFIDENCE
   const verdictAnalysis = determineVerdict(result.score, result.breakdown);
