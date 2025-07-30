@@ -5,7 +5,6 @@
   "description": "Get personalized beauty product recommendations based on your skin profile",
   "permissions": [
     "storage",
-    "tabs",
     "activeTab"
   ],
   "host_permissions": [
