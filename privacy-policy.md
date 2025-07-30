@@ -40,4 +40,7 @@ If you have any questions, concerns, or suggestions, please contact me at:
 ## 9. Conclusion
 Your privacy is my priority. This extension is built to run fully on your device with your data staying private. This policy is meant to be transparent and easy to understand so you know exactly how your information is handled.
 
+## 10. Web Version of this Document
+[Click Here](https://beautymatch-privacy.vercel.app/)
+
 Thank you for using **BeautyMatch**!
