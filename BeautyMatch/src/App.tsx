@@ -175,13 +175,40 @@ function App() {
         {matchResult && (
           <div className="bg-white rounded-lg p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             {/* Verdict */}
-            <div className="rounded-lg p-3 mb-3 bg-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{matchResult.verdict}</span>
-                  <span className="font-semibold">{matchResult.score}/100</span>
-                  <span className="text-xs text-gray-500">Confidence: {matchResult.confidence || 0}%</span>
-                </div>
+            <div className={`rounded-xl p-4 mb-4 flex items-center justify-between shadow transition-all duration-200
+              ${matchResult.verdict === "PERFECT_MATCH"
+                ? "bg-gradient-to-r from-green-100 to-green-50 border border-green-200"
+                : matchResult.verdict === "GOOD_MATCH"
+                  ? "bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-200"
+                  : matchResult.verdict === "CAUTION"
+                    ? "bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-200"
+                    : "bg-gradient-to-r from-red-100 to-red-50 border border-red-200"
+              }
+            `}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">
+                  {matchResult.verdict === "PERFECT_MATCH"
+                    ? "✨"
+                    : matchResult.verdict === "GOOD_MATCH"
+                      ? "👍"
+                      : matchResult.verdict === "CAUTION"
+                        ? "⚠️"
+                        : "❌"}
+                </span>
+                <span className={`font-bold text-lg ${matchResult.verdict === "PERFECT_MATCH"
+                    ? "text-green-700"
+                    : matchResult.verdict === "GOOD_MATCH"
+                      ? "text-blue-700"
+                      : matchResult.verdict === "CAUTION"
+                        ? "text-yellow-700"
+                        : "text-red-700"
+                  }`}>
+                  {matchResult.verdict.replace("_", " ")}
+                </span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="font-semibold text-xl text-gray-800">{matchResult.score}/100</span>
+                <span className="text-xs text-gray-500">Confidence: {matchResult.confidence || 0}%</span>
               </div>
             </div>
             {/* Reasons */}
