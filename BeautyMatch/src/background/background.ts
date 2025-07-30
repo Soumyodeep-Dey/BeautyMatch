@@ -1,9 +1,12 @@
-// src/background/background.ts
-
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("BeautyMatch extension installed.");
-  });
-  
-  // You can add more background logic here in future:
-  // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => { ... });
-  
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === "GET_ACTIVE_TAB") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        sendResponse(tabs[0]);
+      } else {
+        sendResponse(null);
+      }
+    });
+    return true; // Important to keep the message channel open
+  }
+});

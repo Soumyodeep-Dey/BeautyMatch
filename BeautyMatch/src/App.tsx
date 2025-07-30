@@ -33,29 +33,35 @@ function App() {
   }, [])
 
   const analyzeCurrentPage = async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
 
     try {
-      // Get current active tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const tab: chrome.tabs.Tab = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: "GET_ACTIVE_TAB" }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(response);
+          }
+        });
+      });
 
       if (!tab.id) {
-        throw new Error('Cannot access current tab')
+        throw new Error('Cannot access current tab');
       }
 
-      // Send message to content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: "GET_PRODUCT_INFO" })
+      const response = await chrome.tabs.sendMessage(tab.id, { action: "GET_PRODUCT_INFO" });
 
       if (response.success && response.data) {
-        setProductInfo(response.data)
+        setProductInfo(response.data);
 
         if (skinProfile) {
-          const result = analyzeProductAdvanced(response.data, skinProfile)
-          setMatchResult(result)
+          const result = analyzeProductAdvanced(response.data, skinProfile);
+          setMatchResult(result);
         }
       } else {
-        setError(response.error || 'No product found on this page')
+        setError(response.error || 'No product found on this page');
       }
     } catch (err) {
       if (
@@ -71,9 +77,10 @@ function App() {
       }
       console.error('Analysis error:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
 
   const openOnboarding = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') })
@@ -300,19 +307,19 @@ function App() {
         )}
       </div>
 
-        {/* Footer */}
-        <div className="mt-4 text-center">
-          <a
-            href="https://soumyodeep-dey.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-gray-500 hover:text-pink-600 transition-colors underline"
-          >
-            BeautyMatch • Personalized beauty analysis
-            <br />
-            Built by Soumyodeep Dey
-          </a>
-        </div>
+      {/* Footer */}
+      <div className="mt-4 text-center">
+        <a
+          href="https://soumyodeep-dey.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-500 hover:text-pink-600 transition-colors underline"
+        >
+          BeautyMatch • Personalized beauty analysis
+          <br />
+          Built by Soumyodeep Dey
+        </a>
+      </div>
     </div>
   )
 }
